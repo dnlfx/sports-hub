@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 class AppContainer(context: Context) {
     val scoresRepository: ScoresRepository = EspnScoresRepository(context.applicationContext)
     val sourcesRepository = SourcesRepository(context.applicationContext)
+    val pageScanner = com.sportshub.app.data.scan.PageScanner()
 
     /** The game the user just tapped, so its detail screen can draw the header before loading. */
     var lastOpenedGame: com.sportshub.app.model.Game? = null
