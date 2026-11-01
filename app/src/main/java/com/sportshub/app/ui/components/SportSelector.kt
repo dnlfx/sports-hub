@@ -30,7 +30,7 @@ import com.sportshub.app.model.Sport
 
 /**
  * Compact sport switcher for a top bar: a chip naming the current sport that
- * opens a menu of every sport. Sports that aren't live yet are listed as "Soon".
+ * opens a menu of every sport. Sports that aren't live yet are listed but greyed out.
  */
 @Composable
 fun SportMenuButton(selected: Sport, onSelect: (Sport) -> Unit, modifier: Modifier = Modifier) {
@@ -58,11 +58,10 @@ fun SportMenuButton(selected: Sport, onSelect: (Sport) -> Unit, modifier: Modifi
                         open = false
                     },
                     enabled = sport.isAvailable,
-                    trailingIcon = {
-                        when {
-                            sport == selected -> Icon(Icons.Rounded.Check, contentDescription = "Selected")
-                            !sport.isAvailable -> Text("Soon", style = MaterialTheme.typography.labelMedium)
-                        }
+                    trailingIcon = if (sport == selected) {
+                        { Icon(Icons.Rounded.Check, contentDescription = "Selected") }
+                    } else {
+                        null
                     },
                 )
             }
@@ -70,7 +69,7 @@ fun SportMenuButton(selected: Sport, onSelect: (Sport) -> Unit, modifier: Modifi
     }
 }
 
-/** Sport picker for forms, as a row of chips. Sports that aren't live yet show as disabled "soon" chips. */
+/** Sport picker for forms, as a row of chips. Sports that aren't live yet show as disabled chips. */
 @Composable
 fun SportChips(
     selected: Sport,
@@ -89,7 +88,7 @@ fun SportChips(
                 selected = sport == selected,
                 enabled = sport.isAvailable,
                 onClick = { onSelect(sport) },
-                label = { Text(if (sport.isAvailable) sport.shortName else "${sport.shortName} · soon") },
+                label = { Text(sport.shortName) },
                 leadingIcon = if (sport == selected) {
                     { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
                 } else {

@@ -1,5 +1,6 @@
 package com.sportshub.app
 
+import com.sportshub.app.data.espn.EspnImages
 import com.sportshub.app.data.espn.EspnParser
 import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Sport
@@ -68,6 +69,48 @@ class EspnParserTest {
         assertEquals("R. Runner", detail.leaders.single().athleteName)
         assertEquals("Rushing Yards", detail.leaders.single().category)
         assertEquals("3", detail.leaders.single().teamId)
+    }
+
+    @Test fun summaryKeepsVenueAndTv() {
+        val game = EspnParser.parseSummary(Sport.NFL, resource("espn_summary.json")).game
+        assertEquals("Ford Field", game?.venue)
+        assertEquals(listOf("FOX"), game?.broadcasts)
+    }
+
+    @Test fun parsesPlayerStatsPerTeam() {
+        val detail = EspnParser.parseSummary(Sport.NFL, resource("espn_summary.json"))
+        assertEquals(listOf("4", "3"), detail.playerStats.map { it.teamId })
+
+        val away = detail.playerStats.first { it.teamId == "4" }
+        // Passing comes before fumbles; the empty punting table is dropped.
+        assertEquals(listOf("passing", "fumbles"), away.tables.map { it.key })
+        val passing = away.tables.first()
+        assertEquals("Passing", passing.title)
+        assertEquals(listOf("C/ATT", "YDS", "TD", "INT"), passing.columns)
+        // A player with no stats isn't listed.
+        val passer = passing.players.single()
+        assertEquals("J. Thrower", passer.name)
+        assertEquals("7", passer.jersey)
+        assertEquals(listOf("20/28", "250", "2", "0"), passer.values)
+        assertEquals("https://a.espncdn.com/i/headshots/nfl/players/full/1.png", passer.headshotUrl)
+
+        // Short stat rows are padded so every row has one value per column.
+        val runner = detail.playerStats.first { it.teamId == "3" }.tables.single().players.single()
+        assertEquals("R. Runner III", runner.name)
+        assertEquals(listOf("15", "88", "5.9", "-", "-"), runner.values)
+    }
+
+    @Test fun leadersCarryPosition() {
+        val detail = EspnParser.parseSummary(Sport.NFL, resource("espn_summary.json"))
+        assertEquals("RB", detail.leaders.single().position)
+    }
+
+    @Test fun logoUrlsAreCanonical() {
+        assertEquals(
+            "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png",
+            EspnImages.canonical("http://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/buf.png"),
+        )
+        assertNull(EspnImages.canonical("  "))
     }
 
     @Test fun survivesGarbage() {

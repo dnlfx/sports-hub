@@ -2,7 +2,7 @@ package com.sportshub.app.model
 
 /**
  * Every sport the app knows about. Only sports marked [isAvailable] show data;
- * the rest appear as "coming soon" so adding one later is a data change, not a redesign.
+ * the rest are listed but greyed out, so turning one on later is a data change, not a redesign.
  *
  * [espnPath] is the sport/league path on ESPN's public site API.
  * [periodName] labels periods in the UI (quarter, inning, period, half).

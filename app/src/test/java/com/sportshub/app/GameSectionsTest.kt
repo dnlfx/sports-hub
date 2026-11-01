@@ -7,6 +7,7 @@ import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
+import com.sportshub.app.ui.scores.mergeGame
 import com.sportshub.app.ui.scores.sectionsOf
 import com.sportshub.app.ui.scores.statShare
 import org.junit.Assert.assertEquals
@@ -75,5 +76,15 @@ class GameSectionsTest {
         assertNull(statShare("5-12", "7-13"))
         assertNull(statShare("0", "0"))
         assertNull(statShare("-", "12"))
+    }
+
+    @Test fun detailKeepsTvAndVenueFromList() {
+        val fromList = game("1", GameStatus.Final()).copy(broadcasts = listOf("CBS"), venue = "Ford Field")
+        val latest = game("1", GameStatus.Final())
+        val merged = mergeGame(latest, fromList)!!
+        assertEquals(listOf("CBS"), merged.broadcasts)
+        assertEquals("Ford Field", merged.venue)
+        // A different game from the list is never mixed in.
+        assertEquals(null, mergeGame(latest, fromList.copy(id = "2"))?.venue)
     }
 }

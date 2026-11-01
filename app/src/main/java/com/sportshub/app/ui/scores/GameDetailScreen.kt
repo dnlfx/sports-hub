@@ -35,30 +35,34 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import coil.compose.AsyncImage
 import com.sportshub.app.model.Competitor
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.GameStatus
-import com.sportshub.app.model.Leader
 import com.sportshub.app.model.TeamStatRow
 import com.sportshub.app.ui.components.EmptyState
 import com.sportshub.app.ui.components.LiveBadge
@@ -82,7 +86,8 @@ fun GameDetailScreen(
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { viewModel.pollWhileVisible() }
     }
 
-    val game = state.detail?.game ?: initialGame
+    val latest = state.detail?.game
+    val game = remember(latest, initialGame) { mergeGame(latest, initialGame) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -126,8 +131,21 @@ fun GameDetailScreen(
                 }
 
                 val leaders = state.detail?.leaders?.takeIf { it.isNotEmpty() } ?: game?.leaders.orEmpty()
-                if (leaders.isNotEmpty() && game != null) {
-                    item(key = "leaders") { Section("Leaders") { LeadersList(leaders, game) } }
+                val playerStats = state.detail?.playerStats.orEmpty()
+                if (game != null) {
+                    when {
+                        // Once the game is on, show each team's full box score.
+                        game.status !is GameStatus.Scheduled && playerStats.isNotEmpty() -> item(key = "players") {
+                            Section("Player stats") { PlayerStatsContent(playerStats, game) }
+                        }
+                        // Before kickoff, ESPN's leaders are each team's season leaders.
+                        game.status is GameStatus.Scheduled && leaders.isNotEmpty() -> item(key = "leaders") {
+                            Section("Season leaders") { TeamLeadersContent(leaders, game) }
+                        }
+                        leaders.isNotEmpty() -> item(key = "leaders") {
+                            Section("Leaders") { TeamLeadersContent(leaders, game) }
+                        }
+                    }
                 }
 
                 val stats = state.detail?.teamStats.orEmpty()
@@ -176,7 +194,7 @@ private fun ScoreHeader(game: Game) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             HeaderTeam(game.away, Modifier.weight(1f))
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1.2f)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1.5f)) {
                 if (game.status == GameStatus.Scheduled) {
                     Text(
                         game.statusLabel(),
@@ -184,26 +202,7 @@ private fun ScoreHeader(game: Game) {
                         textAlign = TextAlign.Center,
                     )
                 } else {
-                    val final = game.status is GameStatus.Final
-                    val big = ScoreTextStyle.copy(fontSize = 48.sp, lineHeight = 52.sp)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "${game.away.score ?: 0}",
-                            style = big,
-                            modifier = Modifier.alpha(if (final && game.home.isWinner) 0.5f else 1f),
-                        )
-                        Text(
-                            "–",
-                            style = big.copy(fontSize = 28.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                        )
-                        Text(
-                            "${game.home.score ?: 0}",
-                            style = big,
-                            modifier = Modifier.alpha(if (final && game.away.isWinner) 0.5f else 1f),
-                        )
-                    }
+                    ScoreLine(game)
                     Spacer(Modifier.height(6.dp))
                     if (game.status is GameStatus.Live) {
                         LiveBadge()
@@ -244,6 +243,44 @@ private fun ScoreHeader(game: Game) {
             }
         }
     }
+}
+
+/**
+ * "15 – 19" on a single line. Starts big and shrinks to fit the space between the
+ * two teams, so a two-digit score never wraps a digit onto the next line.
+ */
+@Composable
+private fun ScoreLine(game: Game) {
+    val final = game.status is GameStatus.Final
+    val dim = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+    val dashColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val text = buildAnnotatedString {
+        withStyle(SpanStyle(color = if (final && game.home.isWinner) dim else Color.Unspecified)) {
+            append("${game.away.score ?: 0}")
+        }
+        withStyle(SpanStyle(color = dashColor, fontSize = 0.6.em)) { append("  –  ") }
+        withStyle(SpanStyle(color = if (final && game.away.isWinner) dim else Color.Unspecified)) {
+            append("${game.home.score ?: 0}")
+        }
+    }
+    var fontSize by remember(text) { mutableStateOf(48.sp) }
+    var fits by remember(text) { mutableStateOf(false) }
+    Text(
+        text,
+        style = ScoreTextStyle.copy(fontSize = fontSize, lineHeight = fontSize * 1.1f),
+        maxLines = 1,
+        softWrap = false,
+        textAlign = TextAlign.Center,
+        // Hide the oversized first pass so it doesn't flash before shrinking.
+        modifier = Modifier.drawWithContent { if (fits) drawContent() },
+        onTextLayout = { result ->
+            if (result.didOverflowWidth && fontSize > 22.sp) {
+                fontSize *= 0.9f
+            } else {
+                fits = true
+            }
+        },
+    )
 }
 
 @Composable
@@ -326,52 +363,6 @@ private fun LinescoreLine(name: String, values: List<String>, header: Boolean) {
                 fontWeight = if (header) FontWeight.SemiBold else null,
                 color = if (header) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             )
-        }
-    }
-}
-
-@Composable
-private fun LeadersList(leaders: List<Leader>, game: Game) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        leaders.forEach { leader ->
-            val team = listOf(game.away.team, game.home.team).firstOrNull { it.id == leader.teamId }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box {
-                    if (leader.headshotUrl != null) {
-                        AsyncImage(
-                            model = leader.headshotUrl,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                        )
-                        // Small team logo badge on the headshot.
-                        if (team != null) {
-                            TeamLogo(
-                                team,
-                                size = 18.dp,
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .clip(CircleShape)
-                                    .background(SportsHubTheme.colors.card),
-                            )
-                        }
-                    } else if (team != null) {
-                        TeamLogo(team, size = 44.dp)
-                    }
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        listOfNotNull(leader.category.ifEmpty { null }, team?.abbreviation).joinToString(" · "),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(leader.athleteName, style = MaterialTheme.typography.titleSmall)
-                    Text(leader.summary, style = MaterialTheme.typography.bodySmall)
-                }
-            }
         }
     }
 }
