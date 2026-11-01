@@ -1,5 +1,4 @@
 <resources>
     <!-- Window background behind the first frame; follows the system theme (see values-night). -->
     <color name="background">#FFF4F5F9</color>
-    <color name="ic_launcher_background">#FF0B0D12</color>
 </resources>
