@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon version of the app mark: the tile with the play triangle cut out. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M38,34h32a8,8 0,0 1,8 8v24a8,8 0,0 1,-8 8h-32a8,8 0,0 1,-8 -8v-24a8,8 0,0 1,8 -8z M49,45 L49,63 L63,54 Z" />
+</vector>

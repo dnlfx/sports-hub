@@ -17,8 +17,12 @@ import kotlinx.coroutines.launch
 data class ScoresUiState(
     val sport: Sport = Sport.default,
     val board: Scoreboard? = null,
+    /** The board's games, grouped for display. Built once per update, not on every frame. */
+    val sections: List<GameSection> = emptyList(),
     /** Week the user picked; null means the current week. */
     val selectedWeek: Int? = null,
+    /** This week's number, so the week strip can mark it while browsing other weeks. */
+    val currentWeek: Int? = null,
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val error: String? = null,
@@ -30,6 +34,7 @@ class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
     val state: StateFlow<ScoresUiState> = _state.asStateFlow()
 
     private var loadJob: Job? = null
+    private var lastFetchAtMs = 0L
 
     fun setSport(sport: Sport) {
         if (sport == _state.value.sport && _state.value.board != null) return
@@ -38,7 +43,9 @@ class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
         loadJob = viewModelScope.launch {
             // Show the last saved scores straight away, then refresh in place.
             repository.cachedScoreboard(sport)?.let { cached ->
-                _state.update { it.copy(board = cached, isLoading = false) }
+                _state.update {
+                    it.copy(board = cached, sections = sectionsOf(cached), currentWeek = cached.week, isLoading = false)
+                }
             }
             fetch(showSpinner = false)
         }
@@ -57,11 +64,16 @@ class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
         loadJob = viewModelScope.launch { fetch(showSpinner = true) }
     }
 
-    /** Called while the Scores screen is visible. Refreshes fast during live games, slowly otherwise. */
+    /**
+     * Called while the Scores screen is visible. Refreshes fast during live games and
+     * slowly otherwise. Coming back to the screen after a while refreshes right away.
+     */
     suspend fun pollWhileVisible() {
         while (true) {
             val anyLive = _state.value.board?.games?.any { it.isLive } == true
-            delay(if (anyLive) LIVE_REFRESH_MS else IDLE_REFRESH_MS)
+            val interval = if (anyLive) LIVE_REFRESH_MS else IDLE_REFRESH_MS
+            val sinceLast = System.currentTimeMillis() - lastFetchAtMs
+            delay((interval - sinceLast).coerceIn(0L, interval))
             if (loadJob?.isActive != true) fetch(showSpinner = false)
         }
     }
@@ -73,15 +85,25 @@ class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
             SlateRequest(season = current.board?.season, seasonType = current.board?.seasonType, week = week)
         } ?: SlateRequest()
         val result = repository.scoreboard(current.sport, request)
+        lastFetchAtMs = System.currentTimeMillis()
         _state.update { s ->
-            if (s.sport != current.sport) return@update s
+            if (s.sport != current.sport || s.selectedWeek != current.selectedWeek) return@update s
             result.fold(
-                onSuccess = { board -> s.copy(board = board, isLoading = false, isRefreshing = false, error = null) },
+                onSuccess = { board ->
+                    s.copy(
+                        board = board,
+                        sections = sectionsOf(board),
+                        currentWeek = if (request.isCurrent) board.week else s.currentWeek,
+                        isLoading = false,
+                        isRefreshing = false,
+                        error = null,
+                    )
+                },
                 onFailure = {
                     s.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = "Couldn't reach the scores service. Check your connection.",
+                        error = "Couldn't reach the scores service.",
                     )
                 },
             )

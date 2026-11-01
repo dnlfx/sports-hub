@@ -1,7 +1,12 @@
 package com.sportshub.app.model
 
+import androidx.compose.runtime.Immutable
 import java.time.Instant
 
+// Models are marked @Immutable so Compose compares them by value: after a refresh,
+// cards whose game didn't change are skipped instead of redrawn.
+
+@Immutable
 data class Team(
     val id: String,
     val name: String,
@@ -12,6 +17,7 @@ data class Team(
     val primaryColor: String? = null,
 )
 
+@Immutable
 sealed interface GameStatus {
     data object Scheduled : GameStatus
     /** [period] is the quarter, inning, half, etc. [clock] is the game clock, if the sport has one. */
@@ -21,6 +27,7 @@ sealed interface GameStatus {
 }
 
 /** One side of a game: the team plus its score and per-period scoring. */
+@Immutable
 data class Competitor(
     val team: Team,
     val score: Int?,
@@ -29,6 +36,7 @@ data class Competitor(
 )
 
 /** A stat leader, e.g. "Passing: J. Allen 24/31, 287 YDS, 2 TD". */
+@Immutable
 data class Leader(
     val category: String,
     val athleteName: String,
@@ -38,6 +46,7 @@ data class Leader(
 )
 
 /** Football-style live situation. Other sports can leave it null. */
+@Immutable
 data class Situation(
     val downDistance: String?,
     val possessionTeamId: String?,
@@ -45,6 +54,7 @@ data class Situation(
     val lastPlay: String?,
 )
 
+@Immutable
 data class Game(
     val id: String,
     val sport: Sport,
@@ -62,6 +72,7 @@ data class Game(
 }
 
 /** A slate of games, e.g. one NFL week. */
+@Immutable
 data class Scoreboard(
     val sport: Sport,
     val season: Int,
@@ -72,8 +83,10 @@ data class Scoreboard(
 )
 
 /** Side-by-side team stat for the game detail screen. */
+@Immutable
 data class TeamStatRow(val label: String, val away: String, val home: String)
 
+@Immutable
 data class GameDetail(
     val game: Game?,
     val teamStats: List<TeamStatRow>,

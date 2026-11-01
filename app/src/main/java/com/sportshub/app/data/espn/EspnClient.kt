@@ -7,19 +7,12 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 /**
  * Fetches raw JSON from ESPN's public site API. No key or account is needed,
  * and nothing is tied to the user's location, so it works the same on a VPN.
  */
-class EspnClient(
-    private val http: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
-        .build(),
-) {
+class EspnClient(private val http: OkHttpClient) {
     private val base = "https://site.api.espn.com/apis/site/v2/sports"
 
     suspend fun scoreboard(sport: Sport, season: Int? = null, seasonType: Int? = null, week: Int? = null): String {
@@ -46,9 +39,13 @@ class EspnClient(
                     .header("User-Agent", "SportsHub-Android/1.0")
                     .build()
                 http.newCall(request).execute().use { response ->
+                    // A 4xx won't fix itself on retry, so fail straight away.
+                    if (response.code in 400..499) throw ClientError(response.code)
                     if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
                     return@withContext response.body?.string() ?: throw IOException("Empty response")
                 }
+            } catch (e: ClientError) {
+                throw e
             } catch (e: IOException) {
                 lastError = e
                 if (attempt < 2) delay(600L * (attempt + 1))
@@ -57,3 +54,6 @@ class EspnClient(
         throw lastError ?: IOException("Request failed")
     }
 }
+
+/** The server rejected the request itself (HTTP 4xx). */
+class ClientError(val code: Int) : IOException("HTTP $code")

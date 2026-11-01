@@ -1,11 +1,10 @@
 package com.sportshub.app.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
-/**
- * A page URL the user added on the Sources screen. The app ships with none.
- * Step 3 adds scanning these pages for standard video (files, HLS, embeds).
- */
+/** A page URL the user added on the Sources screen. The app ships with none. */
+@Immutable
 @Serializable
 data class StreamSource(
     val id: String,

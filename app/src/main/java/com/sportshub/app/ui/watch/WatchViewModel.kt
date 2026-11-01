@@ -41,6 +41,7 @@ class WatchViewModel(
     val games: StateFlow<List<Game>> = _games.asStateFlow()
 
     private var loadedSport: Sport? = null
+    private var gamesLoadedAtMs = 0L
 
     /** Scans any source that hasn't been scanned yet. */
     fun ensureScanned(list: List<StreamSource>) {
@@ -55,12 +56,20 @@ class WatchViewModel(
         }
     }
 
-    /** Games that are live now or start within the next 12 hours, with where they air. */
+    /**
+     * Games that are live now or start within the next 12 hours, with where they air.
+     * Reloads when the sport changes or the list is more than a minute old.
+     */
     fun loadGames(sport: Sport) {
-        if (loadedSport == sport && _games.value.isNotEmpty()) return
+        val fresh = System.currentTimeMillis() - gamesLoadedAtMs < 60_000L
+        if (loadedSport == sport && fresh) return
+        if (loadedSport != sport) _games.value = emptyList()
         loadedSport = sport
+        gamesLoadedAtMs = System.currentTimeMillis()
         viewModelScope.launch {
-            scoresRepository.cachedScoreboard(sport)?.let { _games.value = relevant(it.games) }
+            if (_games.value.isEmpty()) {
+                scoresRepository.cachedScoreboard(sport)?.let { _games.value = relevant(it.games) }
+            }
             scoresRepository.scoreboard(sport).onSuccess { _games.value = relevant(it.games) }
         }
     }

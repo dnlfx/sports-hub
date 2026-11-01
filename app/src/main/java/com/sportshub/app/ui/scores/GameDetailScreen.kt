@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,31 +15,41 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,8 +61,12 @@ import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Leader
 import com.sportshub.app.model.TeamStatRow
 import com.sportshub.app.ui.components.EmptyState
+import com.sportshub.app.ui.components.LiveBadge
 import com.sportshub.app.ui.components.TeamLogo
+import com.sportshub.app.ui.components.accentColor
+import com.sportshub.app.ui.components.shimmer
 import com.sportshub.app.ui.theme.ScoreTextStyle
+import com.sportshub.app.ui.theme.SportsHubTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,51 +83,69 @@ fun GameDetailScreen(
     }
 
     val game = state.detail?.game ?: initialGame
-    Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text(game?.let { "${it.away.team.abbreviation} @ ${it.home.team.abbreviation}" } ?: "Game") },
-            navigationIcon = {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back") }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-        )
-        LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        game?.let { "${it.away.team.abbreviation} @ ${it.home.team.abbreviation}" } ?: "Game",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back") }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize(),
         ) {
-            if (game != null) {
-                item { ScoreHeader(game) }
-                if (game.away.periodScores.isNotEmpty() || game.home.periodScores.isNotEmpty()) {
-                    item { Linescore(game) }
-                }
-                game.situation?.lastPlay?.let { play ->
-                    item { Section("Last play") { Text(play, style = MaterialTheme.typography.bodyMedium) } }
-                }
-            }
-
-            val leaders = state.detail?.leaders?.takeIf { it.isNotEmpty() } ?: game?.leaders.orEmpty()
-            if (leaders.isNotEmpty() && game != null) {
-                item { Section("Leaders") { LeadersList(leaders, game) } }
-            }
-
-            val stats = state.detail?.teamStats.orEmpty()
-            if (stats.isNotEmpty() && game != null) {
-                item { Section("Team stats") { TeamStats(stats, game) } }
-            }
-
-            when {
-                state.isLoading && state.detail == null -> item {
-                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (game != null) {
+                    item(key = "header") { ScoreHeader(game) }
+                    if (game.away.periodScores.isNotEmpty() || game.home.periodScores.isNotEmpty()) {
+                        item(key = "linescore") { Linescore(game) }
+                    }
+                    game.situation?.lastPlay?.let { play ->
+                        item(key = "lastplay") {
+                            Section("Last play") { Text(play, style = MaterialTheme.typography.bodyMedium) }
+                        }
                     }
                 }
-                state.error != null && state.detail == null -> item {
-                    EmptyState(
-                        icon = Icons.Outlined.CloudOff,
-                        title = "Couldn't load details",
-                        message = state.error!!,
-                        action = { TextButton(onClick = viewModel::retry) { Text("Try again") } },
-                    )
+
+                val leaders = state.detail?.leaders?.takeIf { it.isNotEmpty() } ?: game?.leaders.orEmpty()
+                if (leaders.isNotEmpty() && game != null) {
+                    item(key = "leaders") { Section("Leaders") { LeadersList(leaders, game) } }
+                }
+
+                val stats = state.detail?.teamStats.orEmpty()
+                if (stats.isNotEmpty() && game != null) {
+                    item(key = "stats") { Section("Team stats") { TeamStats(stats, game) } }
+                }
+
+                val error = state.error
+                when {
+                    state.isLoading && state.detail == null -> item(key = "loading") { DetailSkeleton() }
+                    error != null && state.detail == null -> item(key = "error") {
+                        EmptyState(
+                            icon = Icons.Outlined.CloudOff,
+                            title = "Couldn't load details",
+                            message = error,
+                            action = { FilledTonalButton(onClick = viewModel::retry) { Text("Try again") } },
+                        )
+                    }
                 }
             }
         }
@@ -121,28 +154,61 @@ fun GameDetailScreen(
 
 @Composable
 private fun ScoreHeader(game: Game) {
+    val awayColor = game.away.team.accentColor()
+    val homeColor = game.home.team.accentColor()
+    val card = SportsHubTheme.colors.card
+    // A wash of each team's color behind its side of the header.
+    val wash = remember(awayColor, homeColor, card) {
+        Brush.horizontalGradient(
+            0f to awayColor.copy(alpha = 0.30f),
+            0.5f to Color.Transparent,
+            1f to homeColor.copy(alpha = 0.30f),
+        )
+    }
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .padding(20.dp),
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(card)
+            .background(wash)
+            .padding(horizontal = 16.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             HeaderTeam(game.away, Modifier.weight(1f))
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1.2f)) {
                 if (game.status == GameStatus.Scheduled) {
-                    Text(game.statusLabel(), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                    Text(
+                        game.statusLabel(),
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                    )
                 } else {
+                    val final = game.status is GameStatus.Final
+                    val big = ScoreTextStyle.copy(fontSize = 48.sp, lineHeight = 52.sp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${game.away.score ?: 0}", style = ScoreTextStyle.copy(fontSize = ScoreTextStyle.fontSize * 1.4f))
-                        Text("  –  ", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${game.home.score ?: 0}", style = ScoreTextStyle.copy(fontSize = ScoreTextStyle.fontSize * 1.4f))
+                        Text(
+                            "${game.away.score ?: 0}",
+                            style = big,
+                            modifier = Modifier.alpha(if (final && game.home.isWinner) 0.5f else 1f),
+                        )
+                        Text(
+                            "–",
+                            style = big.copy(fontSize = 28.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                        )
+                        Text(
+                            "${game.home.score ?: 0}",
+                            style = big,
+                            modifier = Modifier.alpha(if (final && game.away.isWinner) 0.5f else 1f),
+                        )
                     }
                     Spacer(Modifier.height(6.dp))
-                    if (game.status is GameStatus.Live) LiveBadge()
-                    Spacer(Modifier.height(4.dp))
+                    if (game.status is GameStatus.Live) {
+                        LiveBadge()
+                        Spacer(Modifier.height(4.dp))
+                    }
                     Text(
                         game.statusLabel(),
                         style = MaterialTheme.typography.labelLarge,
@@ -153,24 +219,60 @@ private fun ScoreHeader(game: Game) {
             }
             HeaderTeam(game.home, Modifier.weight(1f))
         }
-        val footer = listOfNotNull(game.broadcasts.joinToString(", ").ifEmpty { null }, game.venue).joinToString(" · ")
-        if (footer.isNotEmpty()) {
+
+        val situation = game.situation
+        situation?.downDistance?.let {
             Spacer(Modifier.height(14.dp))
-            Text(footer, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val redZone = situation.isRedZone
+            Text(
+                if (redZone) "$it · Red zone" else it,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (redZone) SportsHubTheme.colors.live else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
         }
-        game.situation?.downDistance?.let {
-            Spacer(Modifier.height(6.dp))
-            Text(it, style = MaterialTheme.typography.labelLarge)
+
+        val broadcasts = game.broadcasts.joinToString(", ")
+        if (broadcasts.isNotEmpty() || game.venue != null) {
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                if (broadcasts.isNotEmpty()) InfoLabel(Icons.Outlined.Tv, broadcasts, Modifier.weight(1f, fill = false))
+                game.venue?.let { InfoLabel(Icons.Outlined.LocationOn, it, Modifier.weight(1f, fill = false)) }
+            }
         }
+    }
+}
+
+@Composable
+private fun InfoLabel(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
 @Composable
 private fun HeaderTeam(side: Competitor, modifier: Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        TeamLogo(side.team, size = 56.dp)
+        TeamLogo(side.team, size = 64.dp)
         Spacer(Modifier.height(8.dp))
-        Text(side.team.name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        Text(
+            side.team.name,
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
         side.team.record?.let {
             Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -182,11 +284,11 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clip(MaterialTheme.shapes.large)
+            .background(SportsHubTheme.colors.card)
             .padding(16.dp),
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(12.dp))
         content()
     }
@@ -198,7 +300,7 @@ private fun Linescore(game: Game) {
     val labels = (1..periods).map { if (it <= 4) "${game.sport.periodName}$it" else "OT" }
     Section("Scoring") {
         LinescoreLine("", labels + "T", header = true)
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         listOf(game.away, game.home).forEach { side ->
             val cells = (0 until periods).map { side.periodScores.getOrNull(it)?.toString() ?: "-" }
             LinescoreLine(side.team.abbreviation, cells + "${side.score ?: 0}", header = false)
@@ -208,16 +310,21 @@ private fun Linescore(game: Game) {
 
 @Composable
 private fun LinescoreLine(name: String, values: List<String>, header: Boolean) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(name, Modifier.weight(1.4f), fontWeight = FontWeight.Bold)
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(name, Modifier.weight(1.4f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
         values.forEachIndexed { i, v ->
+            val total = i == values.lastIndex
             Text(
                 v,
                 Modifier.weight(1f),
                 textAlign = TextAlign.Center,
-                fontWeight = if (header || i == values.lastIndex) FontWeight.Bold else FontWeight.Normal,
+                style = if (total && !header) {
+                    ScoreTextStyle.copy(fontSize = 18.sp, lineHeight = 20.sp)
+                } else {
+                    MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum")
+                },
+                fontWeight = if (header) FontWeight.SemiBold else null,
                 color = if (header) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }
@@ -225,21 +332,34 @@ private fun LinescoreLine(name: String, values: List<String>, header: Boolean) {
 
 @Composable
 private fun LeadersList(leaders: List<Leader>, game: Game) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         leaders.forEach { leader ->
             val team = listOf(game.away.team, game.home.team).firstOrNull { it.id == leader.teamId }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (leader.headshotUrl != null) {
-                    AsyncImage(
-                        model = leader.headshotUrl,
-                        contentDescription = leader.athleteName,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                    )
-                } else if (team != null) {
-                    TeamLogo(team, size = 40.dp)
+                Box {
+                    if (leader.headshotUrl != null) {
+                        AsyncImage(
+                            model = leader.headshotUrl,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        )
+                        // Small team logo badge on the headshot.
+                        if (team != null) {
+                            TeamLogo(
+                                team,
+                                size = 18.dp,
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .clip(CircleShape)
+                                    .background(SportsHubTheme.colors.card),
+                            )
+                        }
+                    } else if (team != null) {
+                        TeamLogo(team, size = 44.dp)
+                    }
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
@@ -258,16 +378,22 @@ private fun LeadersList(leaders: List<Leader>, game: Game) {
 
 @Composable
 private fun TeamStats(rows: List<TeamStatRow>, game: Game) {
+    val awayColor = game.away.team.accentColor(MaterialTheme.colorScheme.primary)
+    val homeColor = game.home.team.accentColor(MaterialTheme.colorScheme.secondary)
     Column {
-        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-            Text(game.away.team.abbreviation, Modifier.weight(1f), fontWeight = FontWeight.Bold)
-            Spacer(Modifier.weight(2f))
-            Text(game.home.team.abbreviation, Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+        Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            TeamLogo(game.away.team, size = 22.dp)
+            Spacer(Modifier.width(6.dp))
+            Text(game.away.team.abbreviation, style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.weight(1f))
+            Text(game.home.team.abbreviation, style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.width(6.dp))
+            TeamLogo(game.home.team, size = 22.dp)
         }
         rows.forEach { row ->
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                Text(row.away, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(row.away, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
                 Text(
                     row.label,
                     Modifier.weight(2f),
@@ -275,8 +401,42 @@ private fun TeamStats(rows: List<TeamStatRow>, game: Game) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text(row.home, Modifier.weight(1f), textAlign = TextAlign.End, style = MaterialTheme.typography.bodyMedium)
+                Text(row.home, Modifier.weight(1f), textAlign = TextAlign.End, style = MaterialTheme.typography.titleSmall)
             }
+            val share = remember(row) { statShare(row.away, row.home) }
+            if (share != null) {
+                Spacer(Modifier.height(6.dp))
+                StatBar(share, awayColor, homeColor)
+            }
+        }
+    }
+}
+
+/** Split bar: the away team's share of the stat on the left, the home team's on the right. */
+@Composable
+private fun StatBar(awayShare: Float, awayColor: Color, homeColor: Color) {
+    Row(Modifier.fillMaxWidth().height(4.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        if (awayShare > 0f) {
+            Box(Modifier.weight(awayShare).fillMaxSize().clip(CircleShape).background(awayColor))
+        }
+        if (awayShare < 1f) {
+            Box(Modifier.weight(1f - awayShare).fillMaxSize().clip(CircleShape).background(homeColor))
+        }
+    }
+}
+
+@Composable
+private fun DetailSkeleton() {
+    val block = MaterialTheme.colorScheme.surfaceContainerHigh
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.shimmer()) {
+        repeat(2) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(block),
+            )
         }
     }
 }
