@@ -58,6 +58,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sportshub.app.data.SourcesRepository
 import com.sportshub.app.data.scan.FoundVideo
 import com.sportshub.app.data.scan.HtmlMediaExtractor
 import com.sportshub.app.data.scan.ScanResult
@@ -264,7 +265,7 @@ private fun SourceCard(
                 Column(Modifier.weight(1f)) {
                     Text(source.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        HtmlMediaExtractor.hostOf(source.url),
+                        SourcesRepository.displayUrl(source.url),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

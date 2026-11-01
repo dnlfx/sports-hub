@@ -16,5 +16,19 @@ class SourcesRepositoryTest {
 
     @Test fun rejectsBlank() = assertNull(SourcesRepository.normalizeUrl("   "))
 
+    @Test fun keepsPathQueryAndFragment() = assertEquals(
+        "https://example.com/category/nfl/?page=2#games",
+        SourcesRepository.normalizeUrl("https://example.com/category/nfl/?page=2#games"),
+    )
+
+    @Test fun keepsPathWithoutScheme() =
+        assertEquals("https://example.com/category/nfl/", SourcesRepository.normalizeUrl("example.com/category/nfl/"))
+
+    @Test fun encodesSpacesInsteadOfDroppingPath() =
+        assertEquals("https://example.com/my%20videos/week%201", SourcesRepository.normalizeUrl("https://example.com/my videos/week 1"))
+
+    @Test fun displayShowsFullPath() =
+        assertEquals("example.com/category/nfl", SourcesRepository.displayUrl("https://www.example.com/category/nfl/"))
+
     @Test fun rejectsNoHost() = assertNull(SourcesRepository.normalizeUrl("not a url"))
 }

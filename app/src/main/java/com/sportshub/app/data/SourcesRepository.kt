@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.util.UUID
 
 private val Context.sourcesStore by preferencesDataStore(name = "sources")
@@ -54,15 +55,30 @@ class SourcesRepository(private val context: Context) {
     }
 
     companion object {
-        /** Accepts http(s) URLs only. Returns the cleaned URL, or null if it isn't one. */
+        /**
+         * Accepts http(s) URLs only and keeps the whole address: path, query and fragment.
+         * Returns the cleaned URL, or null if it isn't one.
+         */
         fun normalizeUrl(input: String): String? {
             val trimmed = input.trim()
             if (trimmed.isEmpty()) return null
             val withScheme = if ("://" in trimmed) trimmed else "https://$trimmed"
-            val uri = runCatching { java.net.URI(withScheme) }.getOrNull() ?: return null
-            if (uri.scheme?.lowercase() !in setOf("http", "https")) return null
-            if (uri.host.isNullOrBlank() || '.' !in uri.host) return null
-            return uri.toString()
+            // java.net.URI keeps the text exactly as pasted. Pasted links with spaces or
+            // non-ASCII characters fail there, so fall back to OkHttp, which encodes them.
+            val parsed = runCatching { java.net.URI(withScheme) }.getOrNull()
+            val (scheme, host, text) = if (parsed != null) {
+                Triple(parsed.scheme, parsed.host, parsed.toString())
+            } else {
+                val url = withScheme.toHttpUrlOrNull() ?: return null
+                Triple(url.scheme, url.host, url.toString())
+            }
+            if (scheme?.lowercase() !in setOf("http", "https")) return null
+            if (host.isNullOrBlank() || '.' !in host) return null
+            return text
         }
+
+        /** The full address for display, without the scheme or "www.", e.g. "example.com/category/nfl". */
+        fun displayUrl(url: String): String =
+            url.substringAfter("://").removePrefix("www.").trimEnd('/')
     }
 }
