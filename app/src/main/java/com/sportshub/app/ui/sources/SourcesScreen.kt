@@ -305,7 +305,7 @@ private fun SavedSourceRow(source: StreamSource, onRemove: () -> Unit, modifier:
             Column(Modifier.weight(1f)) {
                 Text(source.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    "${source.sport.shortName} · ${HtmlMediaExtractor.hostOf(source.url)}",
+                    "${source.sport.shortName} · ${SourcesRepository.displayUrl(source.url)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
