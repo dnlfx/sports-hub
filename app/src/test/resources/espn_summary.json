@@ -1,0 +1,17 @@
+{
+  "header": {"id": "200", "competitions": [{
+    "date": "2026-11-08T17:00Z",
+    "status": {"period": 3, "displayClock": "4:12", "type": {"state": "in", "shortDetail": "4:12 - 3rd"}},
+    "competitors": [
+      {"homeAway": "home", "score": "17", "team": {"id": "3", "abbreviation": "THR", "logos": [{"href": "https://example.com/thr.png"}]}},
+      {"homeAway": "away", "score": "21", "team": {"id": "4", "abbreviation": "FOR"}}
+    ]}]},
+  "boxscore": {"teams": [
+    {"team": {"id": "4"}, "statistics": [{"name": "totalYards", "label": "Total Yards", "displayValue": "312"}, {"name": "turnovers", "label": "Turnovers", "displayValue": "1"}]},
+    {"team": {"id": "3"}, "statistics": [{"name": "totalYards", "label": "Total Yards", "displayValue": "287"}, {"name": "turnovers", "label": "Turnovers", "displayValue": "0"}]}
+  ]},
+  "leaders": [
+    {"team": {"id": "3"}, "leaders": [{"name": "rushingYards", "displayName": "Rushing Yards",
+      "leaders": [{"displayValue": "15 CAR, 88 YDS", "athlete": {"shortName": "R. Runner", "headshot": {"href": "https://example.com/r.png"}}}]}]}
+  ]
+}

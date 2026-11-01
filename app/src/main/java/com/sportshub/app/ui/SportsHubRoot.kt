@@ -23,7 +23,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sportshub.app.AppContainer
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.sportshub.app.model.Sport
+import com.sportshub.app.ui.scores.GameDetailScreen
+import com.sportshub.app.ui.scores.GameDetailViewModel
 import com.sportshub.app.ui.scores.ScoresScreen
+import com.sportshub.app.ui.scores.ScoresViewModel
 import com.sportshub.app.ui.sources.SourcesScreen
 import com.sportshub.app.ui.watch.WatchScreen
 
@@ -44,7 +51,9 @@ fun SportsHubRoot(container: AppContainer) {
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                 Tab.entries.forEach { tab ->
-                    val selected = backStack?.destination?.hierarchy?.any { it.route == tab.route } == true
+                    val route = backStack?.destination?.route
+                    val selected = backStack?.destination?.hierarchy?.any { it.route == tab.route } == true ||
+                        (tab == Tab.Scores && route?.startsWith("game/") == true)
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
@@ -67,10 +76,31 @@ fun SportsHubRoot(container: AppContainer) {
             modifier = Modifier.padding(padding),
         ) {
             composable(Tab.Scores.route) {
+                val scoresViewModel: ScoresViewModel = viewModel(
+                    factory = viewModelFactory { initializer { ScoresViewModel(container.scoresRepository) } },
+                )
                 ScoresScreen(
                     sport = selectedSport,
                     onSelectSport = container::selectSport,
-                    scoresRepository = container.scoresRepository,
+                    viewModel = scoresViewModel,
+                    onOpenGame = { game ->
+                        container.lastOpenedGame = game
+                        navController.navigate("game/${game.sport.id}/${game.id}")
+                    },
+                )
+            }
+            composable("game/{sportId}/{gameId}") { entry ->
+                val sport = Sport.fromId(entry.arguments?.getString("sportId"))
+                val gameId = entry.arguments?.getString("gameId").orEmpty()
+                val detailViewModel: GameDetailViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer { GameDetailViewModel(container.scoresRepository, sport, gameId) }
+                    },
+                )
+                GameDetailScreen(
+                    viewModel = detailViewModel,
+                    initialGame = container.lastOpenedGame?.takeIf { it.id == gameId },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable(Tab.Watch.route) {
