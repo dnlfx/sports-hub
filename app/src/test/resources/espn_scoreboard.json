@@ -1,0 +1,52 @@
+{
+  "season": {"type": 2, "year": 2026},
+  "week": {"number": 9},
+  "events": [
+    {
+      "id": "100", "date": "2026-11-08T18:00Z", "name": "Away Team at Home Team",
+      "competitions": [{
+        "id": "100", "date": "2026-11-08T18:00Z",
+        "venue": {"fullName": "Test Stadium"},
+        "status": {"clock": 0, "displayClock": "0:00", "period": 0,
+          "type": {"id": "1", "name": "STATUS_SCHEDULED", "state": "pre", "completed": false, "shortDetail": "11/8 - 1:00 PM EST"}},
+        "broadcasts": [{"market": "national", "names": ["CBS"]}],
+        "competitors": [
+          {"id": "1", "homeAway": "home", "score": "0",
+           "team": {"id": "1", "abbreviation": "HOM", "shortDisplayName": "Homers", "color": "112233", "logo": "https://example.com/hom.png"},
+           "records": [{"name": "overall", "type": "total", "summary": "5-3"}]},
+          {"id": "2", "homeAway": "away", "score": "0",
+           "team": {"id": "2", "abbreviation": "AWY", "shortDisplayName": "Visitors"},
+           "records": [{"name": "overall", "type": "total", "summary": "4-4"}]}
+        ]
+      }]
+    },
+    {
+      "id": "200", "date": "2026-11-08T17:00Z",
+      "competitions": [{
+        "status": {"displayClock": "4:12", "period": 3,
+          "type": {"name": "STATUS_IN_PROGRESS", "state": "in", "shortDetail": "4:12 - 3rd"}},
+        "broadcast": "FOX",
+        "situation": {"downDistanceText": "2nd & 7 at HOM 35", "possession": "4", "isRedZone": false, "lastPlay": {"text": "Pass complete for 12 yards."}},
+        "leaders": [{"name": "passingYards", "displayName": "Passing Leader",
+          "leaders": [{"displayValue": "18/25, 210 YDS, 2 TD", "athlete": {"shortName": "A. Passer", "headshot": "https://example.com/p.png"}, "team": {"id": "4"}}]}],
+        "competitors": [
+          {"homeAway": "home", "score": "17", "linescores": [{"value": 7}, {"value": 10}, {"value": 0}],
+           "team": {"id": "3", "abbreviation": "THR", "shortDisplayName": "Threes"}},
+          {"homeAway": "away", "score": "21", "linescores": [{"value": 0}, {"value": 14}, {"value": 7}],
+           "team": {"id": "4", "abbreviation": "FOR", "shortDisplayName": "Fours"}}
+        ]
+      }]
+    },
+    {
+      "id": "300", "date": "2026-11-07T01:15Z",
+      "competitions": [{
+        "status": {"period": 4, "type": {"name": "STATUS_FINAL", "state": "post", "shortDetail": "Final/OT"}},
+        "competitors": [
+          {"homeAway": "home", "score": "27", "winner": true, "team": {"id": "5", "abbreviation": "FIV"}},
+          {"homeAway": "away", "score": "24", "winner": false, "team": {"id": "6", "abbreviation": "SIX"}}
+        ]
+      }]
+    },
+    {"id": "bad", "competitions": [{"competitors": []}]}
+  ]
+}
