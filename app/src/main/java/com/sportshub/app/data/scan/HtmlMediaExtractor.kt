@@ -66,7 +66,9 @@ object HtmlMediaExtractor {
 
         // schema.org VideoObject in JSON-LD, plus any direct media URLs written in page data
         doc.select("script").forEach { script ->
-            mediaUrlInText.findAll(script.data()).forEach { add(it.value.replace("\\/", "/"), null) }
+            // JSON often escapes slashes ("https:\/\/..."), so unescape before matching.
+            val text = script.data().replace("\\/", "/")
+            mediaUrlInText.findAll(text).forEach { add(it.value, null) }
         }
 
         // Embedded players (iframes). Kept so the scanner can look one level inside them.
