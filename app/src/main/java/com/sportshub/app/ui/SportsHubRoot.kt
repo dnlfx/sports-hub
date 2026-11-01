@@ -3,10 +3,15 @@ package com.sportshub.app.ui
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LiveTv
+import androidx.compose.material.icons.filled.Scoreboard
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.LiveTv
 import androidx.compose.material.icons.outlined.Scoreboard
@@ -20,56 +25,75 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sportshub.app.AppContainer
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
+import com.sportshub.app.model.Game
 import com.sportshub.app.model.Sport
 import com.sportshub.app.ui.scores.GameDetailScreen
 import com.sportshub.app.ui.scores.GameDetailViewModel
 import com.sportshub.app.ui.scores.ScoresScreen
 import com.sportshub.app.ui.scores.ScoresViewModel
 import com.sportshub.app.ui.sources.SourcesScreen
+import com.sportshub.app.ui.theme.SportsHubTheme
 import com.sportshub.app.ui.watch.WatchScreen
 import com.sportshub.app.ui.watch.WatchViewModel
 
-private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
-    Scores("scores", "Scores", Icons.Outlined.Scoreboard),
-    Watch("watch", "Watch", Icons.Outlined.LiveTv),
-    Sources("sources", "Sources", Icons.Outlined.Link),
+private enum class Tab(val route: String, val label: String, val icon: ImageVector, val selectedIcon: ImageVector) {
+    Scores("scores", "Scores", Icons.Outlined.Scoreboard, Icons.Filled.Scoreboard),
+    Watch("watch", "Watch", Icons.Outlined.LiveTv, Icons.Filled.LiveTv),
+    Sources("sources", "Sources", Icons.Outlined.Link, Icons.Filled.Link),
 }
+
+private const val GAME_ROUTE = "game/{sportId}/{gameId}"
+private fun isGameRoute(route: String?) = route?.startsWith("game/") == true
 
 @Composable
 fun SportsHubRoot(container: AppContainer) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val selectedSport by container.selectedSport.collectAsStateWithLifecycle()
+    val route = backStack?.destination?.route
+
+    // The tab the user is in. A game screen belongs to the tab that opened it.
+    val tabRoute = if (isGameRoute(route)) navController.previousBackStackEntry?.destination?.route else route
+    val currentTab = Tab.entries.firstOrNull { it.route == tabRoute } ?: Tab.Scores
+
+    fun openGame(game: Game) {
+        container.lastOpenedGame = game
+        navController.navigate("game/${game.sport.id}/${game.id}")
+    }
+
+    fun selectTab(tab: Tab) {
+        if (tab == currentTab) {
+            // Tapping the current tab again goes back to its top level.
+            if (isGameRoute(route)) navController.popBackStack(tab.route, inclusive = false)
+            return
+        }
+        navController.navigateToTab(tab)
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        // Each screen draws its own top bar under the status bar; only the nav bar is reserved here.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+            NavigationBar(containerColor = SportsHubTheme.colors.chrome, tonalElevation = 0.dp) {
                 Tab.entries.forEach { tab ->
-                    val route = backStack?.destination?.route
-                    val selected = backStack?.destination?.hierarchy?.any { it.route == tab.route } == true ||
-                        (tab == Tab.Scores && route?.startsWith("game/") == true)
+                    val selected = tab == currentTab
                     NavigationBarItem(
                         selected = selected,
-                        onClick = {
-                            navController.navigate(tab.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(tab.icon, contentDescription = null) },
+                        onClick = { selectTab(tab) },
+                        icon = { Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null) },
                         label = { Text(tab.label) },
                     )
                 }
@@ -80,21 +104,21 @@ fun SportsHubRoot(container: AppContainer) {
             navController = navController,
             startDestination = Tab.Scores.route,
             modifier = Modifier.padding(padding),
-            // Tabs cross-fade; the game detail screen slides in from the right.
+            // Tabs fade through; the game screen slides in from the right.
             enterTransition = {
-                if (targetState.destination.route?.startsWith("game/") == true) {
-                    slideInHorizontally(tween(280)) { it / 3 } + fadeIn(tween(280))
+                if (isGameRoute(targetState.destination.route)) {
+                    slideInHorizontally(tween(300)) { it / 4 } + fadeIn(tween(300))
                 } else {
-                    fadeIn(tween(220))
+                    fadeIn(tween(220, delayMillis = 60)) + scaleIn(tween(220, delayMillis = 60), initialScale = 0.98f)
                 }
             },
-            exitTransition = { fadeOut(tween(180)) },
+            exitTransition = { fadeOut(tween(120)) },
             popEnterTransition = { fadeIn(tween(220)) },
             popExitTransition = {
-                if (initialState.destination.route?.startsWith("game/") == true) {
-                    slideOutHorizontally(tween(240)) { it / 3 } + fadeOut(tween(240))
+                if (isGameRoute(initialState.destination.route)) {
+                    slideOutHorizontally(tween(240)) { it / 4 } + fadeOut(tween(240))
                 } else {
-                    fadeOut(tween(180))
+                    fadeOut(tween(120))
                 }
             },
         ) {
@@ -106,13 +130,10 @@ fun SportsHubRoot(container: AppContainer) {
                     sport = selectedSport,
                     onSelectSport = container::selectSport,
                     viewModel = scoresViewModel,
-                    onOpenGame = { game ->
-                        container.lastOpenedGame = game
-                        navController.navigate("game/${game.sport.id}/${game.id}")
-                    },
+                    onOpenGame = { openGame(it) },
                 )
             }
-            composable("game/{sportId}/{gameId}") { entry ->
+            composable(GAME_ROUTE) { entry ->
                 val sport = Sport.fromId(entry.arguments?.getString("sportId"))
                 val gameId = entry.arguments?.getString("gameId").orEmpty()
                 val detailViewModel: GameDetailViewModel = viewModel(
@@ -138,12 +159,26 @@ fun SportsHubRoot(container: AppContainer) {
                     sport = selectedSport,
                     onSelectSport = container::selectSport,
                     viewModel = watchViewModel,
-                    onAddSource = { navController.navigate(Tab.Sources.route) },
+                    onAddSource = { navController.navigateToTab(Tab.Sources) },
+                    onOpenGame = { openGame(it) },
                 )
             }
             composable(Tab.Sources.route) {
-                SourcesScreen(sourcesRepository = container.sourcesRepository, defaultSport = selectedSport)
+                SourcesScreen(
+                    sourcesRepository = container.sourcesRepository,
+                    defaultSport = selectedSport,
+                    onOpenWatch = { navController.navigateToTab(Tab.Watch) },
+                )
             }
         }
+    }
+}
+
+/** Switches tabs, keeping each tab's own back stack and scroll position. */
+private fun NavHostController.navigateToTab(tab: Tab) {
+    navigate(tab.route) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }

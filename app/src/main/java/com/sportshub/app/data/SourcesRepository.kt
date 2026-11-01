@@ -25,7 +25,7 @@ class SourcesRepository(private val context: Context) {
             ?: emptyList()
     }
 
-    suspend fun add(url: String, label: String, sport: Sport) {
+    suspend fun add(url: String, label: String, sport: Sport): StreamSource {
         val source = StreamSource(
             id = UUID.randomUUID().toString(),
             url = url,
@@ -34,9 +34,15 @@ class SourcesRepository(private val context: Context) {
             addedAtEpochMs = System.currentTimeMillis(),
         )
         update { it + source }
+        return source
     }
 
     suspend fun remove(id: String) = update { list -> list.filterNot { it.id == id } }
+
+    /** Puts back a source that was just removed (for "Undo"), in its original place. */
+    suspend fun restore(source: StreamSource) = update { list ->
+        if (list.any { it.id == source.id }) list else (list + source).sortedBy { it.addedAtEpochMs }
+    }
 
     private suspend fun update(transform: (List<StreamSource>) -> List<StreamSource>) {
         context.sourcesStore.edit { prefs ->

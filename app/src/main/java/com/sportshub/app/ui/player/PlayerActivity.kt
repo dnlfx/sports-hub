@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Rational
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.OptIn
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AspectRatio
 import androidx.compose.material.icons.outlined.PictureInPictureAlt
+import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -48,7 +51,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -59,6 +64,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -156,6 +162,8 @@ class PlayerActivity : ComponentActivity() {
                             reconnecting = false
                         }
                     }
+                    override fun onIsPlayingChanged(isPlaying: Boolean) = updatePipParams()
+                    override fun onVideoSizeChanged(videoSize: VideoSize) = updatePipParams()
                 })
             }
     }
@@ -211,21 +219,37 @@ class PlayerActivity : ComponentActivity() {
 
     private fun enterImmersive() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Use the full screen on phones with a notch or camera cutout.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
         WindowInsetsControllerCompat(window, window.decorView).apply {
             hide(WindowInsetsCompat.Type.systemBars())
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
 
-    private fun enterPip() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+    private fun pipParams(): PictureInPictureParams {
         val size = player.videoSize
         val ratio = if (size.width > 0 && size.height > 0) {
             Rational(size.width, size.height).coerceIn(Rational(100, 239), Rational(239, 100))
         } else {
             Rational(16, 9)
         }
-        runCatching { enterPictureInPictureMode(PictureInPictureParams.Builder().setAspectRatio(ratio).build()) }
+        val builder = PictureInPictureParams.Builder().setAspectRatio(ratio)
+        // Android 12+: swiping home while playing shrinks the video smoothly into a window.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) builder.setAutoEnterEnabled(player.isPlaying)
+        return builder.build()
+    }
+
+    private fun updatePipParams() {
+        runCatching { setPictureInPictureParams(pipParams()) }
+    }
+
+    private fun enterPip() {
+        runCatching { enterPictureInPictureMode(pipParams()) }
     }
 
     private fun Rational.coerceIn(min: Rational, max: Rational): Rational =
@@ -233,7 +257,8 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if (player.isPlaying) enterPip()
+        // Android 12+ enters picture-in-picture on its own (see pipParams).
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && ::player.isInitialized && player.isPlaying) enterPip()
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
@@ -243,7 +268,7 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (!inPip) player.pause()
+        if (!inPip && ::player.isInitialized) player.pause()
     }
 
     override fun onStart() {
@@ -302,9 +327,10 @@ class PlayerActivity : ComponentActivity() {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .background(Color.Black.copy(alpha = 0.45f))
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))
                         .statusBarsPadding()
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                        .displayCutoutPadding()
+                        .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 24.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = onBack) {
@@ -321,10 +347,8 @@ class PlayerActivity : ComponentActivity() {
                     IconButton(onClick = onToggleAspect) {
                         Icon(Icons.Outlined.AspectRatio, contentDescription = "Fit or fill", tint = Color.White)
                     }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        IconButton(onClick = onPip) {
-                            Icon(Icons.Outlined.PictureInPictureAlt, contentDescription = "Picture in picture", tint = Color.White)
-                        }
+                    IconButton(onClick = onPip) {
+                        Icon(Icons.Outlined.PictureInPictureAlt, contentDescription = "Picture in picture", tint = Color.White)
                     }
                 }
             }
@@ -353,7 +377,18 @@ class PlayerActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(message, color = Color.White, style = MaterialTheme.typography.titleMedium)
+                    Icon(
+                        Icons.Outlined.WifiOff,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(40.dp),
+                    )
+                    Text(
+                        message,
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center,
+                    )
                     Button(onClick = onRetry) { Text("Try again") }
                 }
             }

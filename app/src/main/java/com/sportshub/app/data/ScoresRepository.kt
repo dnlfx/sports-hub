@@ -9,6 +9,7 @@ import com.sportshub.app.model.Sport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /** Which slate to load. A null week means "whatever is current". */
 data class SlateRequest(val season: Int? = null, val seasonType: Int? = null, val week: Int? = null) {
@@ -28,11 +29,11 @@ interface ScoresRepository {
 
 class EspnScoresRepository(
     context: Context,
-    private val client: EspnClient = EspnClient(),
+    private val client: EspnClient,
 ) : ScoresRepository {
 
     private val cacheDir = File(context.cacheDir, "scores").apply { mkdirs() }
-    private val memory = mutableMapOf<Sport, Scoreboard>()
+    private val memory = ConcurrentHashMap<Sport, Scoreboard>()
 
     private fun cacheFile(sport: Sport) = File(cacheDir, "${sport.id}_current.json")
 

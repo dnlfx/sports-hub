@@ -1,11 +1,13 @@
 package com.sportshub.app.data.scan
 
+import androidx.compose.runtime.Immutable
 import org.jsoup.Jsoup
 import java.net.URI
 
 enum class VideoKind { HLS, DASH, FILE, EMBED }
 
 /** A video found on a page. [referer] is the page it was found on, sent along when playing. */
+@Immutable
 data class FoundVideo(
     val url: String,
     val title: String,

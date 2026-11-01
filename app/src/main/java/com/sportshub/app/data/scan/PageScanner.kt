@@ -1,5 +1,6 @@
 package com.sportshub.app.data.scan
 
+import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -8,8 +9,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
+@Immutable
 sealed interface ScanResult {
     data class Found(val videos: List<FoundVideo>) : ScanResult
     /** The page asks for a human check or refuses automated access. The app stops there. */
@@ -18,13 +19,7 @@ sealed interface ScanResult {
 }
 
 /** Loads a source page and lists the videos on it, looking one level into embedded players. */
-class PageScanner(
-    private val http: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .build(),
-) {
+class PageScanner(private val http: OkHttpClient) {
     suspend fun scan(pageUrl: String): ScanResult = withContext(Dispatchers.IO) {
         val page = try {
             fetch(pageUrl, referer = null)

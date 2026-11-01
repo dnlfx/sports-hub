@@ -13,9 +13,18 @@ An Android sports app: live scores and stats, plus a Watch tab for video sources
 ```
 app/src/main/java/com/sportshub/app/
   model/      Sport, Game, Team, StreamSource (sport-agnostic)
-  data/       ScoresRepository (swappable data provider), SourcesRepository (saved URLs)
-  ui/         Scores, Watch and Sources tabs, shared components, theme
+  data/       ScoresRepository (swappable data provider), SourcesRepository (saved URLs), page scanner
+  ui/         Scores, Watch and Sources tabs, game detail, player, shared components, theme
 ```
+
+## Design
+
+- Material 3 with a full custom color scheme for light and dark mode (`ui/theme/Theme.kt`).
+  Colors Material has no role for (cards, live red) live in `SportsHubTheme.colors`.
+- Barlow Condensed for titles and scores, with tabular figures so digits don't shift; body text uses the system font.
+  The font is under the SIL Open Font License (`licenses/BarlowCondensed-OFL.txt`).
+- Each tab has a large title that collapses on scroll, with the sport switcher in the top bar.
+- Team colors tint score cards and the game header, adjusted so very dark or very light colors stay visible.
 
 Adding a sport means flipping `isAvailable` in `Sport.kt` and teaching the scores provider about it. The UI reads from the enum.
 
