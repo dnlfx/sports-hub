@@ -1,12 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themed-icon version of the app mark: the tile with the play triangle cut out. -->
+<!-- Themed-icon version of the app mark: the same ball and streaks in one color, seams cut out. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
+        android:pathData="M42.57,52.28 L35.5,59.35"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="4.4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M46.72,61.28 L36.11,71.89"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="4.8"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M55.72,65.43 L51.48,69.68"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="4.4"
+        android:strokeLineCap="round" />
+    <path
         android:fillColor="#FFFFFFFF"
-        android:fillType="evenOdd"
-        android:pathData="M38,34h32a8,8 0,0 1,8 8v24a8,8 0,0 1,-8 8h-32a8,8 0,0 1,-8 -8v-24a8,8 0,0 1,8 -8z M49,45 L49,63 L63,54 Z" />
+        android:pathData="M64.36,61.4 A15,15 0 0,1 76.28,47.2 A13.6,13.6 0 0,1 64.36,61.4 Z M58.2,32.04 A15,15 0 0,1 46.29,46.23 A13.6,13.6 0 0,1 58.2,32.04 Z M76.1,44.4 A16.4,16.4 0 0,0 61.58,61.71 A15,15 0 0,1 46.46,49.03 A16.4,16.4 0 0,0 60.99,31.72 A15,15 0 0,1 76.1,44.4 Z" />
 </vector>
