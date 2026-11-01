@@ -25,4 +25,4 @@ The app ships with no video sources. On the Sources tab you paste a page URL, an
 
 ## Building
 
-Open in Android Studio, or run `./gradlew assembleDebug`. Every push builds a debug APK in GitHub Actions; download it from the run's artifacts.
+Open in Android Studio, or run `./gradlew assembleDebug`. Pull requests build a debug APK in GitHub Actions. Every merge to `main` publishes a single release, named like **Sports Hub 1.0.12 (latest)**, with the installable APK attached; older releases are removed.
