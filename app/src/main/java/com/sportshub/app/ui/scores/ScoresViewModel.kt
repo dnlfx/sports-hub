@@ -30,15 +30,25 @@ data class ScoresUiState(
 
 class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
 
-    private val _state = MutableStateFlow(ScoresUiState())
+    private val _state = MutableStateFlow(startState(Sport.default))
     val state: StateFlow<ScoresUiState> = _state.asStateFlow()
 
     private var loadJob: Job? = null
     private var lastFetchAtMs = 0L
 
+    /** Scores already in memory, shown on the first frame instead of a loading placeholder. */
+    private fun startState(sport: Sport): ScoresUiState =
+        repository.peekScoreboard(sport)?.let { board ->
+            ScoresUiState(sport = sport, board = board, sections = sectionsOf(board), currentWeek = board.week, isLoading = false)
+        } ?: ScoresUiState(sport = sport)
+
     fun setSport(sport: Sport) {
-        if (sport == _state.value.sport && _state.value.board != null) return
-        _state.value = ScoresUiState(sport = sport)
+        if (sport == _state.value.sport && _state.value.board != null) {
+            // Showing scores from memory: still bring them up to date once.
+            if (lastFetchAtMs == 0L && loadJob == null) loadJob = viewModelScope.launch { fetch(showSpinner = false) }
+            return
+        }
+        _state.value = startState(sport)
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             // Show the last saved scores straight away, then refresh in place.

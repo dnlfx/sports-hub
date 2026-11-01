@@ -229,5 +229,29 @@
         "shortName": "FOX"
       }
     }
-  ]
+  ],
+  "drives": {
+    "previous": [
+      {
+        "plays": [
+          {
+            "text": "Kickoff"
+          },
+          {
+            "text": "Old play"
+          }
+        ]
+      }
+    ],
+    "current": {
+      "plays": [
+        {
+          "text": "Pass short"
+        },
+        {
+          "text": "R. Runner up the middle for 4"
+        }
+      ]
+    }
+  }
 }

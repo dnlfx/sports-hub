@@ -92,7 +92,8 @@ fun WatchScreen(
     val allSources by viewModel.sources.collectAsStateWithLifecycle()
     val scans by viewModel.scans.collectAsStateWithLifecycle()
     val games by viewModel.games.collectAsStateWithLifecycle()
-    val sources = remember(allSources, sport) { allSources.filter { it.sportId == sport.id } }
+    val sourcesLoaded = allSources != null
+    val sources = remember(allSources, sport) { allSources.orEmpty().filter { it.sportId == sport.id } }
 
     LaunchedEffect(sources) { viewModel.ensureScanned(sources) }
     LaunchedEffect(sport) { viewModel.loadGames(sport) }
@@ -139,6 +140,9 @@ fun WatchScreen(
                 }
             }
 
+            // Until saved sources are read (a few milliseconds at launch), show nothing here
+            // rather than a "No sources yet" message that would flash and vanish.
+            if (!sourcesLoaded) return@LazyColumn
             item(key = "sources_header") {
                 SectionHeader(
                     "Your sources",

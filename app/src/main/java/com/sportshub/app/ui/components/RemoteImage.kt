@@ -2,7 +2,6 @@ package com.sportshub.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -24,54 +23,78 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
+import coil.imageLoader
+import coil.memory.MemoryCache
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 
 private const val MAX_RETRIES = 5
 
 /**
- * An image from the network that keeps trying. Coil gives up after one failed
- * download, so a brief drop (say, while the app is waking up) used to leave a
- * placeholder on screen for good. This retries with a growing pause instead.
- * Retries don't change the cache key, so a success is cached like any other load.
+ * Every logo and headshot is decoded at this one size (in pixels) and cached in memory
+ * under its URL alone. That way an image already shown anywhere in the app is found in
+ * memory before the first frame is drawn, instead of flashing its placeholder first.
+ */
+private const val IMAGE_SIZE_PX = 256
+
+/**
+ * An image from the network, with [placeholder] drawn until it's showing.
  *
- * [onLoadedChange] reports whether the picture is showing, so callers can draw
- * a placeholder underneath until it is.
+ * - Images already in memory appear on the very first frame, with no placeholder flash.
+ * - Coil gives up after one failed download, so a brief drop used to leave the
+ *   placeholder up for good. This retries with a growing pause instead, without
+ *   changing the cache keys, so a later success is cached like any other.
  */
 @Composable
 fun RetryingImage(
-    url: String,
+    url: String?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
-    onLoadedChange: (Boolean) -> Unit = {},
+    placeholder: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val loader = context.imageLoader
+    var loaded by remember(url) {
+        mutableStateOf(url != null && loader.memoryCache?.get(MemoryCache.Key(url)) != null)
+    }
     var attempt by remember(url) { mutableIntStateOf(0) }
     var failedAttempt by remember(url) { mutableIntStateOf(-1) }
-    val request = remember(url, attempt) {
-        ImageRequest.Builder(context)
-            .data(url)
-            // Changing this makes Coil load again, without touching the cache keys.
-            .setParameter("attempt", attempt, memoryCacheKey = null)
-            .build()
-    }
     LaunchedEffect(url, failedAttempt) {
         if (failedAttempt >= 0 && failedAttempt == attempt && attempt < MAX_RETRIES) {
             delay(retryDelayMs(attempt))
             attempt++
         }
     }
-    AsyncImage(
-        model = request,
-        contentDescription = contentDescription,
-        modifier = modifier,
-        contentScale = contentScale,
-        onState = { state ->
-            onLoadedChange(state is AsyncImagePainter.State.Success)
-            if (state is AsyncImagePainter.State.Error) failedAttempt = attempt
-        },
-    )
+    Box(modifier, contentAlignment = Alignment.Center) {
+        if (!loaded) placeholder()
+        if (url != null) {
+            val request = remember(url, attempt) {
+                ImageRequest.Builder(context)
+                    .data(url)
+                    .size(IMAGE_SIZE_PX)
+                    .memoryCacheKey(url)
+                    // Changing this makes Coil load again, without touching the cache keys.
+                    .setParameter("attempt", attempt, memoryCacheKey = null)
+                    .build()
+            }
+            AsyncImage(
+                model = request,
+                contentDescription = contentDescription,
+                modifier = Modifier.matchParentSize(),
+                contentScale = contentScale,
+                onState = { state ->
+                    // Only success and failure change what's shown; "loading" is ignored so an
+                    // image that's already up never blinks back to its placeholder.
+                    when (state) {
+                        is AsyncImagePainter.State.Success -> loaded = true
+                        is AsyncImagePainter.State.Error -> failedAttempt = attempt
+                        else -> Unit
+                    }
+                },
+            )
+        }
+    }
 }
 
 /** 1s, 2s, 4s, 8s, 15s: quick for a blip, gentle on a dead connection. */
@@ -83,32 +106,23 @@ internal fun retryDelayMs(attempt: Int): Long = minOf(1_000L shl attempt.coerceI
  */
 @Composable
 fun PlayerHeadshot(url: String?, name: String, size: Dp, modifier: Modifier = Modifier) {
-    var loaded by remember(url) { mutableStateOf(false) }
-    Box(
-        modifier
+    RetryingImage(
+        url = url,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier
             .size(size)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (!loaded) {
+        placeholder = {
             Text(
                 initials(name),
                 fontSize = (size.value * 0.34f).sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-        if (url != null) {
-            RetryingImage(
-                url = url,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-                onLoadedChange = { loaded = it },
-            )
-        }
-    }
+        },
+    )
 }
 
 /** "J. Allen" -> "JA", "Josh Allen" -> "JA". */

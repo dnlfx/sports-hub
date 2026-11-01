@@ -8,10 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,14 +22,15 @@ import com.sportshub.app.model.Team
 
 /**
  * Team logo with a lettered badge while it loads or when there is none.
- * Failed downloads are retried (see [RetryingImage]), and every screen asks for
- * the same URL, so a logo loads once and then comes from the cache.
+ * A logo shown anywhere before comes straight from memory on the first frame.
  */
 @Composable
 fun TeamLogo(team: Team, modifier: Modifier = Modifier, size: Dp = 32.dp) {
-    var showFallback by remember(team.logoUrl) { mutableStateOf(true) }
-    Box(modifier.size(size), contentAlignment = Alignment.Center) {
-        if (showFallback) {
+    RetryingImage(
+        url = team.logoUrl,
+        contentDescription = team.name,
+        modifier = modifier.size(size),
+        placeholder = {
             Box(
                 Modifier
                     .fillMaxSize()
@@ -48,16 +45,8 @@ fun TeamLogo(team: Team, modifier: Modifier = Modifier, size: Dp = 32.dp) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-        team.logoUrl?.let { url ->
-            RetryingImage(
-                url = url,
-                contentDescription = team.name,
-                modifier = Modifier.fillMaxSize(),
-                onLoadedChange = { showFallback = !it },
-            )
-        }
-    }
+        },
+    )
 }
 
 /** Parses "#RRGGBB" into a color, or null if it isn't one. */

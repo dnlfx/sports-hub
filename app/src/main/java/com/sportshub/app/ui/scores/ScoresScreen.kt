@@ -114,7 +114,8 @@ fun ScoresScreen(
                     stickyHeader(key = "weeks", contentType = "weeks") {
                         WeekSelector(
                             weeks = sport.regularSeasonWeeks,
-                            selected = board.week,
+                            // The picked week lights up straight away, not once it has loaded.
+                            selected = state.selectedWeek ?: board.week,
                             current = state.currentWeek,
                             onSelect = viewModel::selectWeek,
                         )
