@@ -34,6 +34,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,11 +65,22 @@ fun Game.statusLabel(): String = when (val s = status) {
 @Composable
 fun GameCard(game: Game, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val final = game.status is GameStatus.Final
+    val fallback = MaterialTheme.colorScheme.outline
+    val awayColor = parseHex(game.away.team.primaryColor) ?: fallback
+    val homeColor = parseHex(game.home.team.primaryColor) ?: fallback
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            // Team-color stripe down the left edge: away on top, home below.
+            .drawBehind {
+                drawRect(
+                    brush = Brush.verticalGradient(listOf(awayColor, homeColor)),
+                    topLeft = Offset.Zero,
+                    size = Size(4.dp.toPx(), size.height),
+                )
+            }
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
@@ -213,4 +229,11 @@ fun LiveBadge(modifier: Modifier = Modifier) {
         Spacer(Modifier.width(5.dp))
         Text("LIVE", color = LiveRed, fontSize = 11.sp, fontWeight = FontWeight.Black)
     }
+}
+
+/** Parses "#RRGGBB" into a color, or null if it isn't one. */
+internal fun parseHex(hex: String?): Color? {
+    val digits = hex?.removePrefix("#")?.takeIf { it.length == 6 } ?: return null
+    val value = digits.toLongOrNull(16) ?: return null
+    return Color(0xFF000000 or value)
 }

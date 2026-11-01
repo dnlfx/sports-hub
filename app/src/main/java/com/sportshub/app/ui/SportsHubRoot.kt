@@ -1,5 +1,10 @@
 package com.sportshub.app.ui
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Link
@@ -75,6 +80,23 @@ fun SportsHubRoot(container: AppContainer) {
             navController = navController,
             startDestination = Tab.Scores.route,
             modifier = Modifier.padding(padding),
+            // Tabs cross-fade; the game detail screen slides in from the right.
+            enterTransition = {
+                if (targetState.destination.route?.startsWith("game/") == true) {
+                    slideInHorizontally(tween(280)) { it / 3 } + fadeIn(tween(280))
+                } else {
+                    fadeIn(tween(220))
+                }
+            },
+            exitTransition = { fadeOut(tween(180)) },
+            popEnterTransition = { fadeIn(tween(220)) },
+            popExitTransition = {
+                if (initialState.destination.route?.startsWith("game/") == true) {
+                    slideOutHorizontally(tween(240)) { it / 3 } + fadeOut(tween(240))
+                } else {
+                    fadeOut(tween(180))
+                }
+            },
         ) {
             composable(Tab.Scores.route) {
                 val scoresViewModel: ScoresViewModel = viewModel(
