@@ -87,8 +87,4 @@ class GameSectionsTest {
         // A different game from the list is never mixed in.
         assertEquals(null, mergeGame(latest, fromList.copy(id = "2"))?.venue)
     }
-
-    @Test fun onlySupportedSportsAreOffered() {
-        assertEquals(listOf(Sport.NFL), Sport.available)
-    }
 }

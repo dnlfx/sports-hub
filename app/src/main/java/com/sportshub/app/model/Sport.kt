@@ -1,8 +1,8 @@
 package com.sportshub.app.model
 
 /**
- * Every sport the app knows about. Only sports marked [isAvailable] show up in the app;
- * the rest stay hidden until they're ready, so turning one on later is a one-flag change.
+ * Every sport the app knows about. Only sports marked [isAvailable] show data;
+ * the rest are listed but greyed out, so turning one on later is a data change, not a redesign.
  *
  * [espnPath] is the sport/league path on ESPN's public site API.
  * [periodName] labels periods in the UI (quarter, inning, period, half).
@@ -26,10 +26,6 @@ enum class Sport(
 
     companion object {
         val default: Sport = NFL
-
-        /** The sports users can pick, in display order. */
-        val available: List<Sport> get() = entries.filter { it.isAvailable }
-
         fun fromId(id: String?): Sport = entries.firstOrNull { it.id == id } ?: default
     }
 }
