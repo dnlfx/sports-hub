@@ -60,7 +60,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.exoplayer.hls)
+    implementation(libs.media3.exoplayer.dash)
     implementation(libs.media3.ui)
+    implementation(libs.jsoup)
     implementation(libs.coil.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)
 

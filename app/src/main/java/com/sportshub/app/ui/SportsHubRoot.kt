@@ -33,6 +33,7 @@ import com.sportshub.app.ui.scores.ScoresScreen
 import com.sportshub.app.ui.scores.ScoresViewModel
 import com.sportshub.app.ui.sources.SourcesScreen
 import com.sportshub.app.ui.watch.WatchScreen
+import com.sportshub.app.ui.watch.WatchViewModel
 
 private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
     Scores("scores", "Scores", Icons.Outlined.Scoreboard),
@@ -104,10 +105,17 @@ fun SportsHubRoot(container: AppContainer) {
                 )
             }
             composable(Tab.Watch.route) {
+                val watchViewModel: WatchViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            WatchViewModel(container.sourcesRepository, container.scoresRepository, container.pageScanner)
+                        }
+                    },
+                )
                 WatchScreen(
                     sport = selectedSport,
                     onSelectSport = container::selectSport,
-                    sourcesRepository = container.sourcesRepository,
+                    viewModel = watchViewModel,
                     onAddSource = { navController.navigate(Tab.Sources.route) },
                 )
             }
