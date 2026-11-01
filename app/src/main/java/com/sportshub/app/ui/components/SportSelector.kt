@@ -29,18 +29,22 @@ import androidx.compose.ui.unit.dp
 import com.sportshub.app.model.Sport
 
 /**
- * Compact sport switcher for a top bar: a chip naming the current sport that
- * opens a menu of every sport. Sports that aren't live yet are listed as "Soon".
+ * Compact sport switcher for a top bar: a chip naming the current sport. Only sports
+ * the app supports are listed; with just one, the chip is a plain label with no menu.
  */
 @Composable
 fun SportMenuButton(selected: Sport, onSelect: (Sport) -> Unit, modifier: Modifier = Modifier) {
+    val sports = Sport.available
+    val canSwitch = sports.size > 1
     var open by remember { mutableStateOf(false) }
     Box(modifier.padding(end = 8.dp)) {
         AssistChip(
-            onClick = { open = true },
+            onClick = { if (canSwitch) open = true },
             label = { Text(selected.shortName) },
-            trailingIcon = {
-                Icon(Icons.Rounded.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
+            trailingIcon = if (canSwitch) {
+                { Icon(Icons.Rounded.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp)) }
+            } else {
+                null
             },
             colors = AssistChipDefaults.assistChipColors(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -49,28 +53,28 @@ fun SportMenuButton(selected: Sport, onSelect: (Sport) -> Unit, modifier: Modifi
             ),
             border = null,
         )
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            Sport.entries.forEach { sport ->
-                DropdownMenuItem(
-                    text = { Text(sport.displayName) },
-                    onClick = {
-                        onSelect(sport)
-                        open = false
-                    },
-                    enabled = sport.isAvailable,
-                    trailingIcon = {
-                        when {
-                            sport == selected -> Icon(Icons.Rounded.Check, contentDescription = "Selected")
-                            !sport.isAvailable -> Text("Soon", style = MaterialTheme.typography.labelMedium)
-                        }
-                    },
-                )
+        if (canSwitch) {
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                sports.forEach { sport ->
+                    DropdownMenuItem(
+                        text = { Text(sport.displayName) },
+                        onClick = {
+                            onSelect(sport)
+                            open = false
+                        },
+                        trailingIcon = if (sport == selected) {
+                            { Icon(Icons.Rounded.Check, contentDescription = "Selected") }
+                        } else {
+                            null
+                        },
+                    )
+                }
             }
         }
     }
 }
 
-/** Sport picker for forms, as a row of chips. Sports that aren't live yet show as disabled "soon" chips. */
+/** Sport picker for forms, as a row of chips. Lists only the sports the app supports. */
 @Composable
 fun SportChips(
     selected: Sport,
@@ -84,12 +88,11 @@ fun SportChips(
             .padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Sport.entries.forEach { sport ->
+        Sport.available.forEach { sport ->
             FilterChip(
                 selected = sport == selected,
-                enabled = sport.isAvailable,
                 onClick = { onSelect(sport) },
-                label = { Text(if (sport.isAvailable) sport.shortName else "${sport.shortName} · soon") },
+                label = { Text(sport.shortName) },
                 leadingIcon = if (sport == selected) {
                     { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
                 } else {

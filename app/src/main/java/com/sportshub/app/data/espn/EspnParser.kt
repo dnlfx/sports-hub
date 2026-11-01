@@ -5,10 +5,13 @@ import com.sportshub.app.model.Game
 import com.sportshub.app.model.GameDetail
 import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Leader
+import com.sportshub.app.model.PlayerStatLine
+import com.sportshub.app.model.PlayerStatTable
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Situation
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
+import com.sportshub.app.model.TeamPlayerStats
 import com.sportshub.app.model.TeamStatRow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -46,8 +49,14 @@ object EspnParser {
     fun parseSummary(sport: Sport, body: String): GameDetail {
         val root = json.parseToJsonElement(body).obj
         val header = root?.obj("header")
-        // The summary header has the same shape as a scoreboard event.
-        val game = header?.let { h -> runCatching { parseEvent(sport, h) }.getOrNull() }
+        // The summary header has the same shape as a scoreboard event, but keeps the
+        // stadium and TV networks elsewhere, so fill those in from the rest of the summary.
+        val game = header?.let { h -> runCatching { parseEvent(sport, h) }.getOrNull() }?.let { g ->
+            g.copy(
+                venue = g.venue ?: root?.obj("gameInfo")?.obj("venue")?.str("fullName"),
+                broadcasts = g.broadcasts.ifEmpty { broadcastNames(root?.arr("broadcasts")) },
+            )
+        }
 
         val homeId = game?.home?.team?.id
         val teams = root?.obj("boxscore")?.arr("teams").orEmpty().mapNotNull { it.obj }
@@ -69,8 +78,73 @@ object EspnParser {
             teamBlock.obj?.arr("leaders").orEmpty().mapNotNull { parseLeaderCategory(it.obj, teamId) }
         }
 
-        return GameDetail(game = game, teamStats = rows, leaders = leaders)
+        val playerStats = root?.obj("boxscore")?.arr("players").orEmpty().mapNotNull { parseTeamPlayers(it.obj) }
+
+        return GameDetail(game = game, teamStats = rows, leaders = leaders, playerStats = playerStats)
     }
+
+    /** Box score tables in the order a fan reads them; anything ESPN adds later goes at the end. */
+    private val tableOrder = listOf(
+        "passing", "rushing", "receiving", "defensive", "interceptions", "fumbles",
+        "kicking", "punting", "kickReturns", "puntReturns",
+    )
+    private val tableTitles = mapOf(
+        "passing" to "Passing",
+        "rushing" to "Rushing",
+        "receiving" to "Receiving",
+        "defensive" to "Defense",
+        "interceptions" to "Interceptions",
+        "fumbles" to "Fumbles",
+        "kicking" to "Kicking",
+        "punting" to "Punting",
+        "kickReturns" to "Kick returns",
+        "puntReturns" to "Punt returns",
+    )
+
+    private fun parseTeamPlayers(block: JsonObject?): TeamPlayerStats? {
+        val teamId = block?.obj("team")?.str("id") ?: return null
+        val tables = block.arr("statistics").orEmpty().mapNotNull { parseStatTable(it.obj) }
+            .sortedBy { t -> tableOrder.indexOf(t.key).let { if (it < 0) Int.MAX_VALUE else it } }
+        return TeamPlayerStats(teamId, tables).takeIf { tables.isNotEmpty() }
+    }
+
+    private fun parseStatTable(stat: JsonObject?): PlayerStatTable? {
+        stat ?: return null
+        val key = stat.str("name") ?: return null
+        val columns = stat.arr("labels").orEmpty().mapNotNull { it.primitiveString() }
+        if (columns.isEmpty()) return null
+        val players = stat.arr("athletes").orEmpty().mapNotNull { entry ->
+            val o = entry.obj ?: return@mapNotNull null
+            val values = o.arr("stats").orEmpty().map { it.primitiveString() ?: "-" }
+            // ESPN lists players with no stats as an empty array; they'd be a row of dashes.
+            if (values.isEmpty()) return@mapNotNull null
+            val athlete = o.obj("athlete") ?: return@mapNotNull null
+            PlayerStatLine(
+                athleteId = athlete.str("id") ?: athlete.str("displayName") ?: return@mapNotNull null,
+                name = shortName(athlete) ?: return@mapNotNull null,
+                headshotUrl = headshot(athlete),
+                jersey = athlete.str("jersey"),
+                values = List(columns.size) { values.getOrNull(it) ?: "-" },
+            )
+        }
+        if (players.isEmpty()) return null
+        val title = tableTitles[key]
+            ?: stat.str("text")?.substringAfter(' ', "")?.ifBlank { null }
+            ?: key.replaceFirstChar { it.uppercase() }
+        return PlayerStatTable(key = key, title = title, columns = columns, players = players)
+    }
+
+    /** "J. Allen" style name: ESPN's short name, or built from first and last name. */
+    private fun shortName(athlete: JsonObject): String? {
+        athlete.str("shortName")?.let { return it }
+        val first = athlete.str("firstName")?.trim().orEmpty()
+        val last = athlete.str("lastName")?.trim().orEmpty()
+        if (first.isNotEmpty() && last.isNotEmpty()) return "${first.first()}. $last"
+        return athlete.str("displayName") ?: athlete.str("fullName")
+    }
+
+    private fun headshot(athlete: JsonObject?): String? =
+        EspnImages.canonical(athlete?.obj("headshot")?.str("href") ?: athlete?.str("headshot"))
 
     private fun JsonObject?.statMap(): Map<String, String> =
         this?.arr("statistics").orEmpty().mapNotNull { s ->
@@ -92,23 +166,21 @@ object EspnParser {
         val status = parseStatus(sport, statusJson)
 
         val broadcasts = buildList {
-            comp.arr("broadcasts").orEmpty().forEach { b ->
-                b.obj?.arr("names").orEmpty().forEach { n -> n.primitiveString()?.let(::add) }
-            }
+            addAll(broadcastNames(comp.arr("broadcasts")))
             if (isEmpty()) comp.str("broadcast")?.let(::add)
-            if (isEmpty()) comp.arr("geoBroadcasts").orEmpty().forEach { g ->
-                g.obj?.obj("media")?.str("shortName")?.let(::add)
-            }
+            if (isEmpty()) addAll(broadcastNames(comp.arr("geoBroadcasts")))
         }.distinct()
 
-        val leaders = buildList {
-            comp.arr("leaders").orEmpty().forEach { cat -> parseLeaderCategory(cat.obj, null)?.let(::add) }
-            if (isEmpty()) {
-                competitors.forEach { c ->
-                    val teamId = c.obj("team")?.str("id")
-                    c.arr("leaders").orEmpty().forEach { cat -> parseLeaderCategory(cat.obj, teamId)?.let(::add) }
-                }
-            }
+        val perTeamLeaders = competitors.flatMap { c ->
+            val teamId = c.obj("team")?.str("id")
+            c.arr("leaders").orEmpty().mapNotNull { cat -> parseLeaderCategory(cat.obj, teamId) }
+        }
+        val gameLeaders = comp.arr("leaders").orEmpty().mapNotNull { cat -> parseLeaderCategory(cat.obj, null) }
+        // Before kickoff, each team's own season leaders are what's worth showing.
+        val leaders = when {
+            status == GameStatus.Scheduled && perTeamLeaders.isNotEmpty() -> perTeamLeaders
+            gameLeaders.isNotEmpty() -> gameLeaders
+            else -> perTeamLeaders
         }
 
         val situation = comp.obj("situation")?.let { s ->
@@ -134,6 +206,15 @@ object EspnParser {
         )
     }
 
+    /** TV names from either broadcast shape: {"names": ["CBS"]} or {"media": {"shortName": "CBS"}}. */
+    private fun broadcastNames(list: JsonArray?): List<String> = buildList {
+        list.orEmpty().forEach { b ->
+            val o = b.obj ?: return@forEach
+            val names = o.arr("names").orEmpty().mapNotNull { it.primitiveString() }
+            if (names.isNotEmpty()) addAll(names) else o.obj("media")?.str("shortName")?.let(::add)
+        }
+    }.distinct()
+
     private fun parseCompetitor(c: JsonObject): Competitor {
         val team = c.obj("team")
         val records = c.arr("records") ?: c.arr("record")
@@ -141,8 +222,9 @@ object EspnParser {
             (list.firstOrNull { it.str("type") == "total" || it.str("name") == "overall" } ?: list.firstOrNull())
                 ?.let { it.str("summary") ?: it.str("displayValue") }
         }
-        val logo = team?.str("logo")
-            ?: team?.arr("logos")?.firstOrNull()?.obj?.str("href")
+        val logo = EspnImages.canonical(
+            team?.str("logo") ?: team?.arr("logos")?.firstOrNull()?.obj?.str("href"),
+        )
         return Competitor(
             team = Team(
                 id = team?.str("id") ?: c.str("id") ?: "",
@@ -181,14 +263,14 @@ object EspnParser {
     private fun parseLeaderCategory(cat: JsonObject?, teamId: String?): Leader? {
         cat ?: return null
         val top = cat.arr("leaders")?.firstOrNull()?.obj ?: return null
-        val athlete = top.obj("athlete")
-        val headshot = athlete?.obj("headshot")?.str("href") ?: athlete?.str("headshot")
+        val athlete = top.obj("athlete") ?: return null
         return Leader(
             category = (cat.str("displayName") ?: cat.str("name") ?: "").removeSuffix(" Leader"),
-            athleteName = athlete?.str("shortName") ?: athlete?.str("displayName") ?: return null,
-            headshotUrl = headshot,
+            athleteName = shortName(athlete) ?: return null,
+            headshotUrl = headshot(athlete),
             summary = top.str("displayValue") ?: "",
-            teamId = top.obj("team")?.str("id") ?: athlete?.obj("team")?.str("id") ?: teamId,
+            teamId = top.obj("team")?.str("id") ?: athlete.obj("team")?.str("id") ?: teamId,
+            position = athlete.obj("position")?.str("abbreviation"),
         )
     }
 

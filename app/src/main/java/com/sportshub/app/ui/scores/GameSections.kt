@@ -62,3 +62,16 @@ private fun statValue(raw: String): Double? {
     clockValue.matchEntire(s)?.let { m -> return m.groupValues[1].toDouble() * 60 + m.groupValues[2].toDouble() }
     return null
 }
+
+/**
+ * The game as the detail screen should show it: the latest data from the game summary,
+ * with the TV networks and stadium from the scores list kept when the summary leaves them out.
+ */
+fun mergeGame(latest: Game?, fromList: Game?): Game? {
+    if (latest == null) return fromList
+    if (fromList == null || fromList.id != latest.id) return latest
+    return latest.copy(
+        venue = latest.venue ?: fromList.venue,
+        broadcasts = latest.broadcasts.ifEmpty { fromList.broadcasts },
+    )
+}

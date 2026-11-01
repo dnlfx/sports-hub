@@ -1,17 +1,233 @@
 {
-  "header": {"id": "200", "competitions": [{
-    "date": "2026-11-08T17:00Z",
-    "status": {"period": 3, "displayClock": "4:12", "type": {"state": "in", "shortDetail": "4:12 - 3rd"}},
-    "competitors": [
-      {"homeAway": "home", "score": "17", "team": {"id": "3", "abbreviation": "THR", "logos": [{"href": "https://example.com/thr.png"}]}},
-      {"homeAway": "away", "score": "21", "team": {"id": "4", "abbreviation": "FOR"}}
-    ]}]},
-  "boxscore": {"teams": [
-    {"team": {"id": "4"}, "statistics": [{"name": "totalYards", "label": "Total Yards", "displayValue": "312"}, {"name": "turnovers", "label": "Turnovers", "displayValue": "1"}]},
-    {"team": {"id": "3"}, "statistics": [{"name": "totalYards", "label": "Total Yards", "displayValue": "287"}, {"name": "turnovers", "label": "Turnovers", "displayValue": "0"}]}
-  ]},
+  "header": {
+    "id": "200",
+    "competitions": [
+      {
+        "date": "2026-11-08T17:00Z",
+        "status": {
+          "period": 3,
+          "displayClock": "4:12",
+          "type": {
+            "state": "in",
+            "shortDetail": "4:12 - 3rd"
+          }
+        },
+        "competitors": [
+          {
+            "homeAway": "home",
+            "score": "17",
+            "team": {
+              "id": "3",
+              "abbreviation": "THR",
+              "logos": [
+                {
+                  "href": "https://example.com/thr.png"
+                }
+              ]
+            }
+          },
+          {
+            "homeAway": "away",
+            "score": "21",
+            "team": {
+              "id": "4",
+              "abbreviation": "FOR"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "boxscore": {
+    "teams": [
+      {
+        "team": {
+          "id": "4"
+        },
+        "statistics": [
+          {
+            "name": "totalYards",
+            "label": "Total Yards",
+            "displayValue": "312"
+          },
+          {
+            "name": "turnovers",
+            "label": "Turnovers",
+            "displayValue": "1"
+          }
+        ]
+      },
+      {
+        "team": {
+          "id": "3"
+        },
+        "statistics": [
+          {
+            "name": "totalYards",
+            "label": "Total Yards",
+            "displayValue": "287"
+          },
+          {
+            "name": "turnovers",
+            "label": "Turnovers",
+            "displayValue": "0"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "team": {
+          "id": "4",
+          "abbreviation": "FOR",
+          "logo": "http://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/for.png"
+        },
+        "statistics": [
+          {
+            "name": "fumbles",
+            "text": "Forest Fumbles",
+            "labels": [
+              "FUM",
+              "LOST",
+              "REC"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "9",
+                  "firstName": "Sam",
+                  "lastName": "Slip",
+                  "displayName": "Sam Slip"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "passing",
+            "text": "Forest Passing",
+            "labels": [
+              "C/ATT",
+              "YDS",
+              "TD",
+              "INT"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "1",
+                  "firstName": "Jo",
+                  "lastName": "Thrower",
+                  "displayName": "Jo Thrower",
+                  "jersey": "7",
+                  "headshot": {
+                    "href": "https://a.espncdn.com/i/headshots/nfl/players/full/1.png"
+                  }
+                },
+                "stats": [
+                  "20/28",
+                  "250",
+                  "2",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "2",
+                  "displayName": "Backup Guy"
+                },
+                "stats": []
+              }
+            ]
+          },
+          {
+            "name": "punting",
+            "labels": [
+              "NO",
+              "YDS"
+            ],
+            "athletes": []
+          }
+        ]
+      },
+      {
+        "team": {
+          "id": "3"
+        },
+        "statistics": [
+          {
+            "name": "rushing",
+            "text": "Thunder Rushing",
+            "labels": [
+              "CAR",
+              "YDS",
+              "AVG",
+              "TD",
+              "LONG"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "5",
+                  "firstName": "Ray",
+                  "lastName": "Runner III"
+                },
+                "stats": [
+                  "15",
+                  "88",
+                  "5.9"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
   "leaders": [
-    {"team": {"id": "3"}, "leaders": [{"name": "rushingYards", "displayName": "Rushing Yards",
-      "leaders": [{"displayValue": "15 CAR, 88 YDS", "athlete": {"shortName": "R. Runner", "headshot": {"href": "https://example.com/r.png"}}}]}]}
+    {
+      "team": {
+        "id": "3"
+      },
+      "leaders": [
+        {
+          "name": "rushingYards",
+          "displayName": "Rushing Yards",
+          "leaders": [
+            {
+              "displayValue": "15 CAR, 88 YDS",
+              "athlete": {
+                "shortName": "R. Runner",
+                "headshot": {
+                  "href": "https://example.com/r.png"
+                },
+                "position": {
+                  "abbreviation": "RB"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "gameInfo": {
+    "venue": {
+      "fullName": "Ford Field"
+    }
+  },
+  "broadcasts": [
+    {
+      "type": {
+        "shortName": "TV"
+      },
+      "media": {
+        "shortName": "FOX"
+      }
+    }
   ]
 }

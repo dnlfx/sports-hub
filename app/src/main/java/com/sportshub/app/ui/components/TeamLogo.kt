@@ -22,13 +22,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
 import com.sportshub.app.model.Team
 
 /**
  * Team logo with a lettered badge while it loads or when there is none.
- * Uses AsyncImage rather than SubcomposeAsyncImage, which is much cheaper in scrolling lists.
+ * Failed downloads are retried (see [RetryingImage]), and every screen asks for
+ * the same URL, so a logo loads once and then comes from the cache.
  */
 @Composable
 fun TeamLogo(team: Team, modifier: Modifier = Modifier, size: Dp = 32.dp) {
@@ -50,12 +49,12 @@ fun TeamLogo(team: Team, modifier: Modifier = Modifier, size: Dp = 32.dp) {
                 )
             }
         }
-        if (team.logoUrl != null) {
-            AsyncImage(
-                model = team.logoUrl,
+        team.logoUrl?.let { url ->
+            RetryingImage(
+                url = url,
                 contentDescription = team.name,
                 modifier = Modifier.fillMaxSize(),
-                onState = { showFallback = it !is AsyncImagePainter.State.Success },
+                onLoadedChange = { showFallback = !it },
             )
         }
     }

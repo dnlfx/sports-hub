@@ -191,15 +191,20 @@ fun SourcesScreen(
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                 keyboardActions = KeyboardActions(onDone = { submit() }),
                             )
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                "Show under",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            // Only ask which sport when there's more than one to pick from.
+                            if (Sport.available.size > 1) {
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    "Show under",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
-                        Spacer(Modifier.height(8.dp))
-                        SportChips(selected = sport, onSelect = { sport = it })
+                        if (Sport.available.size > 1) {
+                            Spacer(Modifier.height(8.dp))
+                            SportChips(selected = sport, onSelect = { sport = it })
+                        }
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = { submit() },

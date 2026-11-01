@@ -35,7 +35,10 @@ data class Competitor(
     val isWinner: Boolean = false,
 )
 
-/** A stat leader, e.g. "Passing: J. Allen 24/31, 287 YDS, 2 TD". */
+/**
+ * A stat leader, e.g. "Passing: J. Allen 24/31, 287 YDS, 2 TD". Before kickoff these
+ * are the team's season leaders; once the game starts they're the game's leaders.
+ */
 @Immutable
 data class Leader(
     val category: String,
@@ -43,7 +46,34 @@ data class Leader(
     val headshotUrl: String?,
     val summary: String,
     val teamId: String?,
+    /** Position abbreviation like "QB", when known. */
+    val position: String? = null,
 )
+
+/** One player's line in a box score table, e.g. a passer's C/ATT, YDS, TD, INT. */
+@Immutable
+data class PlayerStatLine(
+    val athleteId: String,
+    val name: String,
+    val headshotUrl: String?,
+    val jersey: String?,
+    /** One value per column of the table, in the same order as [PlayerStatTable.columns]. */
+    val values: List<String>,
+)
+
+/** One box score table for one team, e.g. "Passing" with columns C/ATT, YDS, TD... */
+@Immutable
+data class PlayerStatTable(
+    /** ESPN's category key, e.g. "passing". */
+    val key: String,
+    val title: String,
+    val columns: List<String>,
+    val players: List<PlayerStatLine>,
+)
+
+/** A team's full box score: every stat table with at least one player in it. */
+@Immutable
+data class TeamPlayerStats(val teamId: String, val tables: List<PlayerStatTable>)
 
 /** Football-style live situation. Other sports can leave it null. */
 @Immutable
@@ -91,4 +121,6 @@ data class GameDetail(
     val game: Game?,
     val teamStats: List<TeamStatRow>,
     val leaders: List<Leader>,
+    /** Per-player box score for each team. Empty before kickoff. */
+    val playerStats: List<TeamPlayerStats> = emptyList(),
 )
