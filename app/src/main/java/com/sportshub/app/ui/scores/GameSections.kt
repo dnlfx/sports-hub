@@ -65,13 +65,28 @@ private fun statValue(raw: String): Double? {
 
 /**
  * The game as the detail screen should show it: the latest data from the game summary,
- * with the TV networks and stadium from the scores list kept when the summary leaves them out.
+ * with the TV networks, stadium and live situation from the scores list kept when the
+ * summary leaves them out, so nothing on screen blinks away once details arrive.
  */
 fun mergeGame(latest: Game?, fromList: Game?): Game? {
     if (latest == null) return fromList
     if (fromList == null || fromList.id != latest.id) return latest
-    return latest.copy(
+    val situation = when {
+        !latest.isLive -> null
+        latest.situation == null -> fromList.situation
+        else -> latest.situation.copy(
+            downDistance = latest.situation.downDistance ?: fromList.situation?.downDistance,
+            lastPlay = latest.situation.lastPlay ?: fromList.situation?.lastPlay,
+        )
+    }
+    val merged = latest.copy(
         venue = latest.venue ?: fromList.venue,
         broadcasts = latest.broadcasts.ifEmpty { fromList.broadcasts },
+        situation = situation,
     )
+    // Hand back the same object when nothing changed, so the screen can skip redrawing.
+    return if (merged == latest) latest else merged
 }
+
+/** [new] if it differs from [old], else [old] itself, so unchanged data keeps its identity. */
+fun <T> keepIfEqual(old: T?, new: T): T = if (old != null && old == new) old else new

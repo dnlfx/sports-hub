@@ -3,6 +3,7 @@ package com.sportshub.app.ui.scores
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -38,9 +39,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -48,11 +49,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -88,6 +91,8 @@ fun GameDetailScreen(
 
     val latest = state.detail?.game
     val game = remember(latest, initialGame) { mergeGame(latest, initialGame) }
+    // Which team's box score is showing. Kept across refreshes and rotation.
+    var selectedTeamId by rememberSaveable { mutableStateOf<String?>(null) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -118,6 +123,10 @@ fun GameDetailScreen(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                val detail = state.detail
+                // Still waiting on the first load: hold each section's place with a placeholder
+                // of the right kind, so nothing is shown that will be swapped out a moment later.
+                val waiting = detail == null && state.error == null
                 if (game != null) {
                     item(key = "header") { ScoreHeader(game) }
                     if (game.away.periodScores.isNotEmpty() || game.home.periodScores.isNotEmpty()) {
@@ -128,35 +137,41 @@ fun GameDetailScreen(
                             Section("Last play") { Text(play, style = MaterialTheme.typography.bodyMedium) }
                         }
                     }
-                }
 
-                val leaders = state.detail?.leaders?.takeIf { it.isNotEmpty() } ?: game?.leaders.orEmpty()
-                val playerStats = state.detail?.playerStats.orEmpty()
-                if (game != null) {
-                    when {
-                        // Once the game is on, show each team's full box score.
-                        game.status !is GameStatus.Scheduled && playerStats.isNotEmpty() -> item(key = "players") {
-                            Section("Player stats") { PlayerStatsContent(playerStats, game) }
-                        }
+                    val leaders = detail?.leaders.orEmpty()
+                    val playerStats = detail?.playerStats.orEmpty()
+                    if (game.status == GameStatus.Scheduled) {
                         // Before kickoff, ESPN's leaders are each team's season leaders.
-                        game.status is GameStatus.Scheduled && leaders.isNotEmpty() -> item(key = "leaders") {
-                            Section("Season leaders") { TeamLeadersContent(leaders, game) }
+                        when {
+                            leaders.isNotEmpty() -> item(key = "leaders") {
+                                Section("Season leaders") { TeamLeadersContent(leaders, game) }
+                            }
+                            waiting -> item(key = "leaders") { SectionSkeleton("Season leaders", rows = 6) }
                         }
-                        leaders.isNotEmpty() -> item(key = "leaders") {
-                            Section("Leaders") { TeamLeadersContent(leaders, game) }
+                    } else {
+                        // Once the game is on, show each team's full box score.
+                        when {
+                            playerStats.isNotEmpty() ->
+                                playerStatsItems(playerStats, game, selectedTeamId) { selectedTeamId = it }
+                            leaders.isNotEmpty() -> item(key = "players") {
+                                Section("Leaders") { TeamLeadersContent(leaders, game) }
+                            }
+                            waiting -> item(key = "players") { SectionSkeleton("Player stats", rows = 6) }
                         }
                     }
-                }
 
-                val stats = state.detail?.teamStats.orEmpty()
-                if (stats.isNotEmpty() && game != null) {
-                    item(key = "stats") { Section("Team stats") { TeamStats(stats, game) } }
+                    val stats = detail?.teamStats.orEmpty()
+                    when {
+                        stats.isNotEmpty() -> item(key = "stats") { Section("Team stats") { TeamStats(stats, game) } }
+                        waiting -> item(key = "stats") { SectionSkeleton("Team stats", rows = 5) }
+                    }
+                } else if (waiting) {
+                    item(key = "loading") { DetailSkeleton() }
                 }
 
                 val error = state.error
-                when {
-                    state.isLoading && state.detail == null -> item(key = "loading") { DetailSkeleton() }
-                    error != null && state.detail == null -> item(key = "error") {
+                if (error != null && detail == null) {
+                    item(key = "error") {
                         EmptyState(
                             icon = Icons.Outlined.CloudOff,
                             title = "Couldn't load details",
@@ -247,7 +262,8 @@ private fun ScoreHeader(game: Game) {
 
 /**
  * "15 – 19" on a single line. Starts big and shrinks to fit the space between the
- * two teams, so a two-digit score never wraps a digit onto the next line.
+ * two teams, so a two-digit score never wraps a digit onto the next line. The size is
+ * worked out before drawing, so the score shows at its final size on the first frame.
  */
 @Composable
 private fun ScoreLine(game: Game) {
@@ -263,24 +279,21 @@ private fun ScoreLine(game: Game) {
             append("${game.home.score ?: 0}")
         }
     }
-    var fontSize by remember(text) { mutableStateOf(48.sp) }
-    var fits by remember(text) { mutableStateOf(false) }
-    Text(
-        text,
-        style = ScoreTextStyle.copy(fontSize = fontSize, lineHeight = fontSize * 1.1f),
-        maxLines = 1,
-        softWrap = false,
-        textAlign = TextAlign.Center,
-        // Hide the oversized first pass so it doesn't flash before shrinking.
-        modifier = Modifier.drawWithContent { if (fits) drawContent() },
-        onTextLayout = { result ->
-            if (result.didOverflowWidth && fontSize > 22.sp) {
-                fontSize *= 0.9f
-            } else {
-                fits = true
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val maxPx = constraints.maxWidth
+        val style = remember(text, maxPx) {
+            var size = 48f
+            fun styleAt(sp: Float) = ScoreTextStyle.copy(fontSize = sp.sp, lineHeight = (sp * 1.1f).sp)
+            if (maxPx != Constraints.Infinity) {
+                while (size > 22f && measurer.measure(text, styleAt(size), maxLines = 1, softWrap = false).size.width > maxPx) {
+                    size *= 0.9f
+                }
             }
-        },
-    )
+            styleAt(size)
+        }
+        Text(text, style = style, maxLines = 1, softWrap = false, textAlign = TextAlign.Center)
+    }
 }
 
 @Composable
@@ -317,7 +330,11 @@ private fun HeaderTeam(side: Competitor, modifier: Modifier) {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
+internal fun Section(
+    title: String,
+    trailing: (@Composable () -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -325,9 +342,37 @@ private fun Section(title: String, content: @Composable () -> Unit) {
             .background(SportsHubTheme.colors.card)
             .padding(16.dp),
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { heading() },
+            )
+            trailing?.invoke()
+        }
         Spacer(Modifier.height(12.dp))
         content()
+    }
+}
+
+/** A section's title with shimmering lines where its content will go. */
+@Composable
+private fun SectionSkeleton(title: String, rows: Int) {
+    val block = MaterialTheme.colorScheme.surfaceContainerHigh
+    Section(title) {
+        Column(Modifier.shimmer(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            repeat(rows) { i ->
+                Box(
+                    Modifier
+                        .fillMaxWidth(if (i % 3 == 2) 0.6f else 1f)
+                        .height(18.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(block),
+                )
+            }
+        }
     }
 }
 

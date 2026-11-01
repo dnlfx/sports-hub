@@ -113,6 +113,11 @@ class EspnParserTest {
         assertNull(EspnImages.canonical("  "))
     }
 
+    @Test fun liveSummaryTakesLastPlayFromDrives() {
+        val game = EspnParser.parseSummary(Sport.NFL, resource("espn_summary.json")).game
+        assertEquals("R. Runner up the middle for 4", game?.situation?.lastPlay)
+    }
+
     @Test fun survivesGarbage() {
         assertTrue(EspnParser.parseScoreboard(Sport.NFL, "{}").games.isEmpty())
     }

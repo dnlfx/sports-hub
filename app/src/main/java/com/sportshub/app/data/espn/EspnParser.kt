@@ -55,6 +55,7 @@ object EspnParser {
             g.copy(
                 venue = g.venue ?: root?.obj("gameInfo")?.obj("venue")?.str("fullName"),
                 broadcasts = g.broadcasts.ifEmpty { broadcastNames(root?.arr("broadcasts")) },
+                situation = if (g.status is GameStatus.Live) summarySituation(root, g.situation) else null,
             )
         }
 
@@ -82,6 +83,35 @@ object EspnParser {
 
         return GameDetail(game = game, teamStats = rows, leaders = leaders, playerStats = playerStats)
     }
+
+    /**
+     * The live situation from a game summary: the header's if it has one, else the
+     * summary's own "situation" block, with the last play taken from the drive log
+     * when neither names it.
+     */
+    private fun summarySituation(root: JsonObject?, fromHeader: Situation?): Situation? {
+        val base = fromHeader ?: root?.obj("situation")?.let(::parseSituation)
+        val lastPlay = base?.lastPlay ?: lastPlayFromDrives(root?.obj("drives"))
+        return when {
+            base != null -> base.copy(lastPlay = lastPlay)
+            lastPlay != null -> Situation(downDistance = null, possessionTeamId = null, isRedZone = false, lastPlay = lastPlay)
+            else -> null
+        }
+    }
+
+    /** Text of the newest play: the end of the current drive, or of the last finished one. */
+    private fun lastPlayFromDrives(drives: JsonObject?): String? {
+        drives ?: return null
+        val current = drives.obj("current")?.arr("plays")?.lastOrNull()?.obj?.str("text")
+        return current ?: drives.arr("previous")?.lastOrNull()?.obj?.arr("plays")?.lastOrNull()?.obj?.str("text")
+    }
+
+    private fun parseSituation(s: JsonObject) = Situation(
+        downDistance = s.str("downDistanceText") ?: s.str("shortDownDistanceText"),
+        possessionTeamId = s.str("possession"),
+        isRedZone = s.bool("isRedZone") ?: false,
+        lastPlay = s.obj("lastPlay")?.str("text"),
+    )
 
     /** Box score tables in the order a fan reads them; anything ESPN adds later goes at the end. */
     private val tableOrder = listOf(
@@ -183,14 +213,7 @@ object EspnParser {
             else -> perTeamLeaders
         }
 
-        val situation = comp.obj("situation")?.let { s ->
-            Situation(
-                downDistance = s.str("downDistanceText") ?: s.str("shortDownDistanceText"),
-                possessionTeamId = s.str("possession"),
-                isRedZone = s.bool("isRedZone") ?: false,
-                lastPlay = s.obj("lastPlay")?.str("text"),
-            )
-        }?.takeIf { status is GameStatus.Live }
+        val situation = comp.obj("situation")?.let(::parseSituation)?.takeIf { status is GameStatus.Live }
 
         return Game(
             id = event.str("id") ?: comp.str("id") ?: error("event without id"),

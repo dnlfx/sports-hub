@@ -6,7 +6,13 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.StreamSource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -25,6 +31,14 @@ class SourcesRepository(private val context: Context) {
         prefs[key]?.let { runCatching { json.decodeFromString<List<StreamSource>>(it) }.getOrNull() }
             ?: emptyList()
     }
+
+    /**
+     * The saved sources, read once at launch and kept up to date. Null until the first
+     * read finishes, so screens can tell "not loaded yet" apart from "none saved" and
+     * don't flash a "No sources yet" message before the list appears.
+     */
+    val current: StateFlow<List<StreamSource>?> =
+        sources.stateIn(CoroutineScope(SupervisorJob() + Dispatchers.IO), SharingStarted.Eagerly, null)
 
     suspend fun add(url: String, label: String, sport: Sport): StreamSource {
         val source = StreamSource(

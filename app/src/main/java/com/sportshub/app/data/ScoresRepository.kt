@@ -1,6 +1,7 @@
 package com.sportshub.app.data
 
 import android.content.Context
+import android.util.LruCache
 import com.sportshub.app.data.espn.EspnClient
 import com.sportshub.app.data.espn.EspnParser
 import com.sportshub.app.model.GameDetail
@@ -25,6 +26,12 @@ interface ScoresRepository {
     suspend fun cachedScoreboard(sport: Sport): Scoreboard?
     suspend fun scoreboard(sport: Sport, request: SlateRequest = SlateRequest()): Result<Scoreboard>
     suspend fun gameDetail(sport: Sport, gameId: String): Result<GameDetail>
+
+    /** The scoreboard already in memory, if any. Never touches disk or network, so screens can draw it on their first frame. */
+    fun peekScoreboard(sport: Sport): Scoreboard? = null
+
+    /** The last loaded details for a game, if still in memory, so reopening a game shows it instantly. */
+    fun peekGameDetail(gameId: String): GameDetail? = null
 }
 
 class EspnScoresRepository(
@@ -58,6 +65,27 @@ class EspnScoresRepository(
 
     override suspend fun gameDetail(sport: Sport, gameId: String): Result<GameDetail> = runCatching {
         val body = client.summary(sport, gameId)
-        withContext(Dispatchers.Default) { EspnParser.parseSummary(sport, body) }
+        var detail = withContext(Dispatchers.Default) { EspnParser.parseSummary(sport, body) }
+        val game = detail.game
+        // The game summary doesn't always carry the live down & distance. The scoreboard
+        // always does, so borrow it from there rather than let it blink out of the header.
+        if (game != null && game.isLive && game.situation?.downDistance == null) {
+            val fromBoard = scoreboard(sport).getOrNull()?.games?.firstOrNull { it.id == game.id }?.situation
+            if (fromBoard != null) {
+                detail = detail.copy(
+                    game = game.copy(
+                        situation = fromBoard.copy(lastPlay = game.situation?.lastPlay ?: fromBoard.lastPlay),
+                    ),
+                )
+            }
+        }
+        detail.also { details.put(gameId, it) }
     }
+
+    override fun peekScoreboard(sport: Sport): Scoreboard? = memory[sport]
+
+    override fun peekGameDetail(gameId: String): GameDetail? = details.get(gameId)
+
+    /** Recently opened games, newest kept. Small: a game summary can be a few hundred KB parsed. */
+    private val details = LruCache<String, GameDetail>(12)
 }

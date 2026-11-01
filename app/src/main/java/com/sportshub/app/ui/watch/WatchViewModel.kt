@@ -11,10 +11,8 @@ import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.StreamSource
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Duration
@@ -31,13 +29,16 @@ class WatchViewModel(
     private val scanner: PageScanner,
 ) : ViewModel() {
 
-    val sources: StateFlow<List<StreamSource>> =
-        sourcesRepository.sources.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    /** Saved sources; null until they've been read from storage. */
+    val sources: StateFlow<List<StreamSource>?> = sourcesRepository.current
 
     private val _scans = MutableStateFlow<Map<String, ScanState>>(emptyMap())
     val scans: StateFlow<Map<String, ScanState>> = _scans.asStateFlow()
 
-    private val _games = MutableStateFlow<List<Game>>(emptyList())
+    // Start from the scores already in memory, so the "on now" row is there on the first frame.
+    private val _games = MutableStateFlow(
+        scoresRepository.peekScoreboard(Sport.default)?.let { relevant(it.games) }.orEmpty(),
+    )
     val games: StateFlow<List<Game>> = _games.asStateFlow()
 
     private var loadedSport: Sport? = null
@@ -63,7 +64,7 @@ class WatchViewModel(
     fun loadGames(sport: Sport) {
         val fresh = System.currentTimeMillis() - gamesLoadedAtMs < 60_000L
         if (loadedSport == sport && fresh) return
-        if (loadedSport != sport) _games.value = emptyList()
+        if (loadedSport != sport) _games.value = scoresRepository.peekScoreboard(sport)?.let { relevant(it.games) }.orEmpty()
         loadedSport = sport
         gamesLoadedAtMs = System.currentTimeMillis()
         viewModelScope.launch {

@@ -26,7 +26,12 @@ class GameDetailViewModel(
     private val gameId: String,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(GameDetailUiState())
+    // A game opened a moment ago is still in memory: start from it so the screen's
+    // first frame is complete, then refresh in place.
+    private val _state = MutableStateFlow(
+        repository.peekGameDetail(gameId)?.let { GameDetailUiState(detail = it, isLoading = false) }
+            ?: GameDetailUiState(),
+    )
     val state: StateFlow<GameDetailUiState> = _state.asStateFlow()
 
     private var loadJob: Job? = null
@@ -64,12 +69,32 @@ class GameDetailViewModel(
         lastLoadAtMs = System.currentTimeMillis()
         _state.update { s ->
             result.fold(
-                onSuccess = { s.copy(detail = it, isLoading = false, isRefreshing = false, error = null) },
+                onSuccess = { s.copy(detail = reuseUnchanged(s.detail, it), isLoading = false, isRefreshing = false, error = null) },
                 onFailure = {
                     s.copy(isLoading = false, isRefreshing = false, error = "Couldn't load this game. Check your connection.")
                 },
             )
         }
+    }
+
+    /**
+     * Each refresh parses a brand-new copy of the game. Parts that didn't change keep
+     * their old objects, so Compose skips redrawing them (the box score is big, and
+     * during a live game most of it is the same from one refresh to the next).
+     */
+    private fun reuseUnchanged(old: GameDetail?, new: GameDetail): GameDetail {
+        if (old == null) return new
+        if (old == new) return old
+        return GameDetail(
+            game = keepIfEqual(old.game, new.game),
+            teamStats = keepIfEqual(old.teamStats, new.teamStats),
+            leaders = keepIfEqual(old.leaders, new.leaders),
+            playerStats = new.playerStats.map { team ->
+                val before = old.playerStats.firstOrNull { it.teamId == team.teamId }
+                if (before == null || before == team) before ?: team
+                else team.copy(tables = team.tables.map { t -> keepIfEqual(before.tables.firstOrNull { it.key == t.key }, t) })
+            },
+        )
     }
 
     private companion object {

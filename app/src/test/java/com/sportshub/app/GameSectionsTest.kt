@@ -7,11 +7,14 @@ import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
+import com.sportshub.app.model.Situation
+import com.sportshub.app.ui.scores.keepIfEqual
 import com.sportshub.app.ui.scores.mergeGame
 import com.sportshub.app.ui.scores.sectionsOf
 import com.sportshub.app.ui.scores.statShare
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -86,5 +89,30 @@ class GameSectionsTest {
         assertEquals("Ford Field", merged.venue)
         // A different game from the list is never mixed in.
         assertEquals(null, mergeGame(latest, fromList.copy(id = "2"))?.venue)
+    }
+
+    @Test fun liveSituationDoesNotBlinkAway() {
+        val live = GameStatus.Live(3, "4:12", "4:12 - 3rd")
+        val listSituation = Situation("2nd & 7 at HOM 35", "a1", isRedZone = false, lastPlay = "Run for 3")
+        val fromList = game("1", live).copy(situation = listSituation)
+        // The summary had nothing: keep what the list showed.
+        assertEquals(listSituation, mergeGame(game("1", live), fromList)?.situation)
+        // The summary has a newer play but no down & distance: take the play, keep the down.
+        val newer = game("1", live).copy(situation = Situation(null, null, false, "Pass for 12"))
+        val merged = mergeGame(newer, fromList)?.situation
+        assertEquals("Pass for 12", merged?.lastPlay)
+        assertEquals("2nd & 7 at HOM 35", merged?.downDistance)
+        // Once the game is over there's no situation to show.
+        assertNull(mergeGame(game("1", GameStatus.Final()), fromList)?.situation)
+    }
+
+    @Test fun unchangedDataKeepsItsIdentity() {
+        val old = listOf(game("1", GameStatus.Final()))
+        val same = listOf(game("1", GameStatus.Final()))
+        assertTrue(keepIfEqual(old, same) === old)
+        val changed = listOf(game("2", GameStatus.Final()))
+        assertTrue(keepIfEqual(old, changed) === changed)
+        val latest = game("1", GameStatus.Final())
+        assertTrue(mergeGame(latest, game("1", GameStatus.Final())) === latest)
     }
 }

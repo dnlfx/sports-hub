@@ -80,7 +80,8 @@ fun SourcesScreen(
     defaultSport: Sport,
     onOpenWatch: () -> Unit,
 ) {
-    val sources by sourcesRepository.sources.collectAsStateWithLifecycle(initialValue = emptyList())
+    val loadedSources by sourcesRepository.current.collectAsStateWithLifecycle()
+    val sources = loadedSources.orEmpty()
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboardManager.current
     val focusManager = LocalFocusManager.current
