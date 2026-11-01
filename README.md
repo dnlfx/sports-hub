@@ -26,3 +26,10 @@ The app ships with no video sources. On the Sources tab you paste a page URL, an
 ## Building
 
 Open in Android Studio, or run `./gradlew assembleDebug`. Pull requests build a debug APK in GitHub Actions. Every merge to `main` publishes a single release, named like **Sports Hub 1.0.12 (latest)**, with the installable APK attached; older releases are removed.
+
+## Release signing
+
+Releases are signed in GitHub Actions with the key in these repository secrets:
+`RELEASE_KEYSTORE_BASE64` (the keystore file, base64), `RELEASE_KEYSTORE_PASSWORD` and `RELEASE_KEY_ALIAS`.
+If the secrets are missing, the release is signed with the debug key and the workflow shows a warning.
+Keep a backup of the keystore: without it, new releases can't update installed copies.

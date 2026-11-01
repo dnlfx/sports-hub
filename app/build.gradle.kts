@@ -19,13 +19,25 @@ android {
         versionName = "1.0.$buildNumber"
     }
 
+    // Release signing comes from CI secrets (see README). Without them, the debug key is used.
+    val keystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+    val releaseSigning = if (keystorePath != null && file(keystorePath).exists()) {
+        signingConfigs.create("release") {
+            storeFile = file(keystorePath)
+            storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+            keyPassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+        }
+    } else {
+        null
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the debug key until a release keystore is added (step 4).
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = releaseSigning ?: signingConfigs.getByName("debug")
         }
     }
 
@@ -43,6 +55,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

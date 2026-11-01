@@ -18,6 +18,8 @@ jobs:
         run: ./gradlew testDebugUnitTest --stacktrace
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
+      - name: Check release build (minified)
+        run: ./gradlew assembleRelease --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: sports-hub-debug-apk
