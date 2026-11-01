@@ -51,9 +51,10 @@ class GameDetailViewModel(
     /** Refreshes while the screen is visible: every 20 seconds during a live game, every 2 minutes otherwise. */
     suspend fun pollWhileVisible() {
         while (true) {
+            // Let a load that's already running (like the first one) finish first.
+            loadJob?.join()
             val interval = if (_state.value.detail?.game?.isLive == true) LIVE_REFRESH_MS else IDLE_REFRESH_MS
-            val sinceLast = System.currentTimeMillis() - lastLoadAtMs
-            delay((interval - sinceLast).coerceIn(0L, interval))
+            delay(nextPollDelayMs(interval, System.currentTimeMillis() - lastLoadAtMs))
             if (loadJob?.isActive != true) load()
         }
     }

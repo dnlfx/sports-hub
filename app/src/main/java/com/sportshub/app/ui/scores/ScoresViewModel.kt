@@ -70,10 +70,11 @@ class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
      */
     suspend fun pollWhileVisible() {
         while (true) {
+            // Let a load that's already running (like the first one at launch) finish first.
+            loadJob?.join()
             val anyLive = _state.value.board?.games?.any { it.isLive } == true
             val interval = if (anyLive) LIVE_REFRESH_MS else IDLE_REFRESH_MS
-            val sinceLast = System.currentTimeMillis() - lastFetchAtMs
-            delay((interval - sinceLast).coerceIn(0L, interval))
+            delay(nextPollDelayMs(interval, System.currentTimeMillis() - lastFetchAtMs))
             if (loadJob?.isActive != true) fetch(showSpinner = false)
         }
     }
