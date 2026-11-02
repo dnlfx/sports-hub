@@ -1,6 +1,13 @@
 # Sports Hub
 
-An Android sports app: live scores and stats, plus a Watch tab for video sources you add yourself. NFL first, with more sports planned.
+An Android sports app: live scores and stats, team pages, player profiles, plus a Watch tab for video sources you add yourself. NFL first, with more sports planned.
+
+## Features
+
+- **Scores**: live, upcoming and final games by week. Tap a game for its box score.
+- **Game page**: score header in both teams' colors, scoring by quarter, player stats per team (passing, rushing, receiving, defense, kicking; interceptions and fumbles are folded into those tables), and team stats.
+- **Teams**: every team by division. A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score, team season stats, the roster and the depth chart.
+- **Players**: tap a player anywhere for their bio (height, weight, age, college, draft), this season's numbers and career stats by year.
 
 ## Stack
 
@@ -19,12 +26,16 @@ app/src/main/java/com/sportshub/app/
 
 ## Design
 
-- Material 3 with a full custom color scheme for light and dark mode (`ui/theme/Theme.kt`).
-  Colors Material has no role for (cards, live red) live in `SportsHubTheme.colors`.
+- "Night game" look: an inky base, the app icon's electric blue as the accent and the football's orange for small highlights.
+  Material 3 with a full custom color scheme for light and dark mode (`ui/theme/Theme.kt`).
+  Colors Material has no role for (cards, borders, live red, win/loss) live in `SportsHubTheme.colors`.
+- A floating pill tab bar. Lists add `bottomListPadding()` so their last item scrolls clear of it.
+- Game, team and player pages open with a full-width header in the team's colors.
 - Barlow Condensed for titles and scores, with tabular figures so digits don't shift; body text uses the system font.
   The font is under the SIL Open Font License (`licenses/BarlowCondensed-OFL.txt`).
 - Each tab has a large title that collapses on scroll, with the sport switcher in the top bar.
-- Team colors tint score cards and the game header, adjusted so very dark or very light colors stay visible.
+- Team colors tint score cards and headers, adjusted so very dark or very light colors stay visible.
+- No loading flicker: everything already loaded is kept in memory and on disk, so pages draw in full on their first frame and refresh in place. While something loads for the first time, a placeholder of the same shape holds its place.
 
 Adding a sport means flipping `isAvailable` in `Sport.kt` and teaching the scores provider about it. The UI reads from the enum.
 
