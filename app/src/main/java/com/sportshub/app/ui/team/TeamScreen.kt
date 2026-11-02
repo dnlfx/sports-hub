@@ -38,6 +38,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -503,7 +504,7 @@ private fun ScheduleRow(entry: ScheduleEntry, teamId: String?, isNext: Boolean) 
                             fontFamily = DisplayFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
-                            fontFeatureSettings = "tnum",
+                            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                         )
                     }
                     if (status.detail.contains("OT")) {
@@ -630,7 +631,7 @@ private fun LazyListScope.teamStatsItems(state: TeamUiState, onRetry: () -> Unit
                                                 fontFamily = DisplayFamily,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 20.sp,
-                                                fontFeatureSettings = "tnum",
+                                                style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
                                             )
                                             stat.perGame?.let {
                                                 Text(
