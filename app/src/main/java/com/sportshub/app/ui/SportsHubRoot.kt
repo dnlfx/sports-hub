@@ -73,6 +73,7 @@ import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
 import com.sportshub.app.ui.athlete.PlayerProfileScreen
 import com.sportshub.app.ui.athlete.PlayerProfileViewModel
+import com.sportshub.app.ui.components.LightStatusBarIcons
 import com.sportshub.app.ui.components.LocalBottomBarSpace
 import com.sportshub.app.ui.scores.GameDetailScreen
 import com.sportshub.app.ui.scores.GameDetailViewModel
@@ -141,6 +142,9 @@ fun SportsHubRoot(container: AppContainer) {
         currentTab = tab
         navController.navigateToTab(tab)
     }
+
+    // Tab screens use the theme's usual status bar icons; detail pages set their own.
+    if (!isDetailRoute(route)) LightStatusBarIcons(enabled = false)
 
     val systemNavBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val barSpace = NavBarHeight + NavBarMargin * 2 + systemNavBar

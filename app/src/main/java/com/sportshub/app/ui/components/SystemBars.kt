@@ -7,21 +7,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.sportshub.app.ui.theme.SportsHubTheme
 
 /**
- * Light status bar icons while this screen shows a dark, colored header behind them.
- * The previous look comes back when the screen leaves.
+ * Sets the status bar icons for the screen on show: light icons over a dark, colored
+ * header when [enabled], otherwise the theme's usual icons. Every screen states what it
+ * wants when it appears, so nothing needs undoing when it leaves (the next screen's
+ * call takes over, even while the old one is still animating out).
  */
 @Composable
 fun LightStatusBarIcons(enabled: Boolean) {
     val view = LocalView.current
+    val darkTheme = SportsHubTheme.colors.isDark
     if (view.isInEditMode) return
-    DisposableEffect(enabled, view) {
+    DisposableEffect(enabled, darkTheme, view) {
         val window = view.context.findActivity()?.window
-        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        val before = controller?.isAppearanceLightStatusBars
-        if (enabled) controller?.isAppearanceLightStatusBars = false
-        onDispose { if (before != null) controller?.isAppearanceLightStatusBars = before }
+        window?.let { WindowCompat.getInsetsController(it, view).isAppearanceLightStatusBars = !enabled && !darkTheme }
+        onDispose { }
     }
 }
 
