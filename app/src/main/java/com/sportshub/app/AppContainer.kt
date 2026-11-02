@@ -5,6 +5,7 @@ import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import com.sportshub.app.data.EspnScoresRepository
+import com.sportshub.app.data.FavoritesRepository
 import com.sportshub.app.data.ScoresRepository
 import com.sportshub.app.data.SourcesRepository
 import com.sportshub.app.data.TeamRepository
@@ -38,6 +39,7 @@ class AppContainer(context: Context) {
     val scoresRepository: ScoresRepository = EspnScoresRepository(appContext, espn)
     val teamRepository = TeamRepository(appContext, espn)
     val sourcesRepository = SourcesRepository(appContext)
+    val favorites = FavoritesRepository(appContext)
     val pageScanner = PageScanner(http)
 
     /**
@@ -67,6 +69,10 @@ class AppContainer(context: Context) {
 
     /** The player the user just tapped, so their page can draw the header before loading. */
     var lastOpenedPlayer: PlayerRef? = null
+
+    /** What the compare page opens with in its first slot. */
+    var lastCompareTeam: Team? = null
+    var lastComparePlayer: PlayerRef? = null
 
     private val _selectedSport = MutableStateFlow(Sport.default)
     val selectedSport: StateFlow<Sport> = _selectedSport.asStateFlow()

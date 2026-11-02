@@ -36,6 +36,10 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,8 +49,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.sportshub.app.data.TeamRepository
 import com.sportshub.app.model.Game
+import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Sport
+import com.sportshub.app.model.Team
+import com.sportshub.app.ui.favorites.FavoriteTeamsSheet
+import com.sportshub.app.ui.favorites.FollowPrompt
+import com.sportshub.app.ui.favorites.YourTeamsStrip
 import com.sportshub.app.ui.components.EmptyState
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.SectionHeader
@@ -68,8 +78,15 @@ fun ScoresScreen(
     onSelectSport: (Sport) -> Unit,
     viewModel: ScoresViewModel,
     onOpenGame: (Game) -> Unit,
+    onOpenTeam: (Team) -> Unit,
+    favoriteTeams: List<Team>,
+    promptDismissed: Boolean,
+    onDismissPrompt: () -> Unit,
+    onToggleFavorite: (Team) -> Unit,
+    teamRepository: TeamRepository,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var picking by rememberSaveable { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(sport) { viewModel.setSport(sport) }
@@ -150,15 +167,74 @@ fun ScoresScreen(
                             message = "There are no ${sport.shortName} games on this slate.",
                         )
                     }
-                    else -> gameSections(state.sections, onOpenGame)
+                    else -> {
+                        if (favoriteTeams.isEmpty() && !promptDismissed) {
+                            item(key = "follow_prompt", contentType = "prompt") {
+                                FollowPrompt(
+                                    onChoose = { picking = true },
+                                    onDismiss = onDismissPrompt,
+                                    modifier = Modifier.animateItem(),
+                                )
+                            }
+                        }
+                        gameSections(state.sections, board, favoriteTeams, onOpenGame, onOpenTeam, onEditFavorites = { picking = true })
+                    }
                 }
             }
         }
     }
+
+    if (picking) {
+        val records = remember(board) { recordsOf(board) }
+        FavoriteTeamsSheet(
+            sport = sport,
+            teamRepository = teamRepository,
+            favorites = favoriteTeams,
+            records = records,
+            onToggle = onToggleFavorite,
+            onDismiss = { picking = false },
+        )
+    }
 }
 
-private fun LazyListScope.gameSections(sections: List<GameSection>, onOpenGame: (Game) -> Unit) {
-    sections.forEach { section ->
+/** Team id to record, e.g. "6-2", from the games on a scoreboard. */
+private fun recordsOf(board: Scoreboard?): Map<String, String> = board?.games.orEmpty()
+    .flatMap { listOf(it.home.team, it.away.team) }
+    .mapNotNull { t -> t.record?.let { t.id to it } }
+    .toMap()
+
+private fun LazyListScope.gameSections(
+    sections: List<GameSection>,
+    board: Scoreboard,
+    favorites: List<Team>,
+    onOpenGame: (Game) -> Unit,
+    onOpenTeam: (Team) -> Unit,
+    onEditFavorites: () -> Unit,
+) {
+    // The user's teams lead: a strip with each team's week at a glance, then their games.
+    if (favorites.isNotEmpty()) {
+        item(key = "section_$YOUR_TEAMS_SECTION", contentType = "section") {
+            SectionHeader(
+                "Your teams",
+                modifier = Modifier.animateItem(),
+                trailing = { TextButton(onClick = onEditFavorites) { Text("Edit") } },
+            )
+        }
+        item(key = "your_teams_strip", contentType = "strip") {
+            YourTeamsStrip(favorites, board, onOpenTeam, Modifier.animateItem())
+        }
+        val mine = sections.firstOrNull { it.key == YOUR_TEAMS_SECTION }?.games.orEmpty()
+        items(mine, key = { it.id }, contentType = { "game" }) { game ->
+            GameCard(
+                game = game,
+                onClick = { onOpenGame(game) },
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .animateItem(),
+            )
+        }
+    }
+    sections.filter { it.key != YOUR_TEAMS_SECTION }.forEach { section ->
         item(key = "section_${section.key}", contentType = "section") {
             SectionHeader(
                 section.title,

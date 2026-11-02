@@ -30,10 +30,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.QueryStats
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -124,6 +127,9 @@ fun TeamScreen(
     onBack: () -> Unit,
     onOpenGame: (Game) -> Unit,
     onOpenPlayer: (PlayerRef) -> Unit,
+    isFavorite: Boolean,
+    onToggleFavorite: (Team) -> Unit,
+    onCompare: (Team) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -160,7 +166,9 @@ fun TeamScreen(
                 }
                 if (team != null) {
                     Row(
-                        Modifier.graphicsLayer { alpha = if (pastHero) 1f else 0f },
+                        Modifier
+                            .weight(1f)
+                            .graphicsLayer { alpha = if (pastHero) 1f else 0f },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TeamLogo(team, size = 26.dp)
@@ -171,6 +179,16 @@ fun TeamScreen(
                             color = Color.White,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    IconButton(onClick = { onCompare(team) }) {
+                        Icon(Icons.Outlined.CompareArrows, contentDescription = "Compare with another team", tint = Color.White)
+                    }
+                    IconButton(onClick = { onToggleFavorite(team) }) {
+                        Icon(
+                            if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                            contentDescription = if (isFavorite) "Unfollow team" else "Follow team",
+                            tint = Color.White,
                         )
                     }
                 }

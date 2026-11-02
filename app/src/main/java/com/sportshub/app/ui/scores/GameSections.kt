@@ -14,20 +14,29 @@ data class GameSection(val key: String, val title: String, val games: List<Game>
 
 private val dayFormat = DateTimeFormatter.ofPattern("EEEE, MMM d")
 
-/** Live games first, then upcoming games grouped by day, then finals. */
+/** Key of the "Your teams" section, which leads the list when the user follows any team. */
+const val YOUR_TEAMS_SECTION = "yours"
+
+/**
+ * The games of the user's teams first (under "Your teams"), then the rest: live games,
+ * upcoming games grouped by day, then finals. A game shows up only once.
+ */
 fun sectionsOf(
     board: Scoreboard,
     zone: ZoneId = ZoneId.systemDefault(),
     today: LocalDate = LocalDate.now(zone),
+    favoriteIds: Set<String> = emptySet(),
 ): List<GameSection> {
-    val live = board.games.filter { it.status is GameStatus.Live }
-    val upcomingByDay = board.games
+    val (mine, games) = board.games.partition { it.home.team.id in favoriteIds || it.away.team.id in favoriteIds }
+    val live = games.filter { it.status is GameStatus.Live }
+    val upcomingByDay = games
         .filter { it.status == GameStatus.Scheduled }
         .groupBy { it.startTime.atZone(zone).toLocalDate() }
         .toSortedMap()
-    val final = board.games.filter { it.status is GameStatus.Final }
-    val postponed = board.games.filter { it.status is GameStatus.Postponed }
+    val final = games.filter { it.status is GameStatus.Final }
+    val postponed = games.filter { it.status is GameStatus.Postponed }
     return buildList {
+        if (mine.isNotEmpty()) add(GameSection(YOUR_TEAMS_SECTION, "Your teams", mine))
         if (live.isNotEmpty()) add(GameSection("live", "Live now", live))
         upcomingByDay.forEach { (day, games) ->
             val title = when (day) {

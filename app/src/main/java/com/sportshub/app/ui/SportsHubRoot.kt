@@ -73,6 +73,9 @@ import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
 import com.sportshub.app.ui.athlete.PlayerProfileScreen
 import com.sportshub.app.ui.athlete.PlayerProfileViewModel
+import com.sportshub.app.ui.compare.CompareKind
+import com.sportshub.app.ui.compare.CompareScreen
+import com.sportshub.app.ui.compare.CompareViewModel
 import com.sportshub.app.ui.components.LightStatusBarIcons
 import com.sportshub.app.ui.components.LocalBottomBarSpace
 import com.sportshub.app.ui.scores.GameDetailScreen
@@ -98,8 +101,9 @@ private enum class Tab(val route: String, val label: String, val icon: ImageVect
 private const val GAME_ROUTE = "game/{sportId}/{gameId}"
 private const val TEAM_ROUTE = "team/{sportId}/{teamId}"
 private const val PLAYER_ROUTE = "player/{sportId}/{athleteId}"
-private fun isDetailRoute(route: String?) =
-    route?.startsWith("game/") == true || route?.startsWith("team/") == true || route?.startsWith("player/") == true
+private const val COMPARE_ROUTE = "compare/{sportId}/{kind}/{firstId}"
+private fun isDetailRoute(route: String?) = route != null &&
+    listOf("game/", "team/", "player/", "compare/").any { route.startsWith(it) }
 
 /** Height of the floating navigation bar, and the gap around it. */
 private val NavBarHeight = 64.dp
@@ -110,6 +114,8 @@ fun SportsHubRoot(container: AppContainer) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val selectedSport by container.selectedSport.collectAsStateWithLifecycle()
+    val favorites by container.favorites.teams.collectAsStateWithLifecycle()
+    val promptDismissed by container.favorites.promptDismissed.collectAsStateWithLifecycle()
     val route = backStack?.destination?.route
 
     // The tab the user is in. Game and team pages belong to the tab they were opened from.
@@ -131,6 +137,13 @@ fun SportsHubRoot(container: AppContainer) {
     fun openPlayer(player: PlayerRef, sport: Sport) {
         container.lastOpenedPlayer = player
         navController.navigate("player/${sport.id}/${player.id}")
+    }
+
+    /** Opens the compare page with [team] or [player] already in the first slot, or empty. */
+    fun openCompare(sport: Sport, kind: CompareKind, team: Team? = null, player: PlayerRef? = null) {
+        container.lastCompareTeam = team
+        container.lastComparePlayer = player
+        navController.navigate("compare/${sport.id}/${kind.id}/${team?.id ?: player?.id ?: "_"}")
     }
 
     fun selectTab(tab: Tab) {
@@ -179,13 +192,19 @@ fun SportsHubRoot(container: AppContainer) {
             ) {
                 composable(Tab.Scores.route) {
                     val scoresViewModel: ScoresViewModel = viewModel(
-                        factory = viewModelFactory { initializer { ScoresViewModel(container.scoresRepository) } },
+                        factory = viewModelFactory { initializer { ScoresViewModel(container.scoresRepository, container.favorites) } },
                     )
                     ScoresScreen(
                         sport = selectedSport,
                         onSelectSport = container::selectSport,
                         viewModel = scoresViewModel,
                         onOpenGame = { openGame(it) },
+                        onOpenTeam = { openTeam(it, selectedSport) },
+                        favoriteTeams = favorites[selectedSport.id].orEmpty(),
+                        promptDismissed = promptDismissed,
+                        onDismissPrompt = container.favorites::dismissPrompt,
+                        onToggleFavorite = { container.favorites.toggle(selectedSport, it) },
+                        teamRepository = container.teamRepository,
                     )
                 }
                 composable(Tab.Teams.route) {
@@ -199,6 +218,8 @@ fun SportsHubRoot(container: AppContainer) {
                         onSelectSport = container::selectSport,
                         viewModel = teamsViewModel,
                         onOpenTeam = { openTeam(it, selectedSport) },
+                        favoriteIds = favorites[selectedSport.id].orEmpty().map { it.id },
+                        onCompare = { openCompare(selectedSport, CompareKind.Teams) },
                     )
                 }
                 composable(GAME_ROUTE) { entry ->
@@ -231,6 +252,9 @@ fun SportsHubRoot(container: AppContainer) {
                         onBack = { navController.popBackStack() },
                         onOpenGame = { openGame(it) },
                         onOpenPlayer = { openPlayer(it, sport) },
+                        isFavorite = favorites[sport.id].orEmpty().any { it.id == teamId },
+                        onToggleFavorite = { container.favorites.toggle(sport, it) },
+                        onCompare = { openCompare(sport, CompareKind.Teams, team = it) },
                     )
                 }
                 composable(PLAYER_ROUTE) { entry ->
@@ -246,6 +270,29 @@ fun SportsHubRoot(container: AppContainer) {
                         viewModel = playerViewModel,
                         onBack = { navController.popBackStack() },
                         onOpenTeam = { openTeam(it, sport) },
+                        onCompare = { openCompare(sport, CompareKind.Players, player = it) },
+                    )
+                }
+                composable(COMPARE_ROUTE) { entry ->
+                    val sport = Sport.fromId(entry.arguments?.getString("sportId"))
+                    val kind = CompareKind.fromId(entry.arguments?.getString("kind"))
+                    val firstId = entry.arguments?.getString("firstId")
+                    val firstTeam = remember(firstId) {
+                        container.lastCompareTeam?.takeIf { it.id == firstId }
+                            ?: firstId?.takeIf { kind == CompareKind.Teams }?.let { container.teamRepository.teamInfo(sport, it) }
+                    }
+                    val firstPlayer = remember(firstId) { container.lastComparePlayer?.takeIf { it.id == firstId } }
+                    val compareViewModel: CompareViewModel = viewModel(
+                        factory = viewModelFactory {
+                            initializer { CompareViewModel(container.teamRepository, sport, kind, firstTeam, firstPlayer) }
+                        },
+                    )
+                    CompareScreen(
+                        viewModel = compareViewModel,
+                        sport = sport,
+                        teamRepository = container.teamRepository,
+                        favoriteTeams = favorites[sport.id].orEmpty(),
+                        onBack = { navController.popBackStack() },
                     )
                 }
                 composable(Tab.Watch.route) {

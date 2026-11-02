@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sportshub.app.model.CareerTable
+import com.sportshub.app.model.PlayerRef
 import com.sportshub.app.model.Team
 import com.sportshub.app.ui.components.EmptyState
 import com.sportshub.app.ui.components.LightStatusBarIcons
@@ -72,6 +74,7 @@ fun PlayerProfileScreen(
     viewModel: PlayerProfileViewModel,
     onBack: () -> Unit,
     onOpenTeam: (Team) -> Unit,
+    onCompare: (PlayerRef) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val profile = state.profile
@@ -92,6 +95,24 @@ fun PlayerProfileScreen(
             Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        val id = profile?.id ?: ref?.id
+                        if (id != null) onCompare(
+                            PlayerRef(
+                                id = id,
+                                name = name,
+                                headshotUrl = headshot,
+                                position = profile?.position ?: ref?.position,
+                                jersey = profile?.jersey ?: ref?.jersey,
+                                team = team,
+                            ),
+                        )
+                    },
+                ) {
+                    Icon(Icons.Outlined.CompareArrows, contentDescription = "Compare with another player", tint = Color.White)
                 }
             }
         }
