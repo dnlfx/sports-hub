@@ -3,6 +3,7 @@ package com.sportshub.app.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -51,7 +52,8 @@ private val DarkColors = darkColorScheme(
     surface = Color(0xFF07090E),
     onSurface = Color(0xFFEDEFF5),
     surfaceVariant = Color(0xFF1B202B),
-    onSurfaceVariant = Color(0xFF8D95A7),
+    // Secondary text. Bright enough to read on cards at a glance, still a clear step below onSurface.
+    onSurfaceVariant = Color(0xFFB0B7C6),
     surfaceTint = Color(0xFF6E9BFF),
     surfaceDim = Color(0xFF07090E),
     surfaceBright = Color(0xFF2B303B),
@@ -62,7 +64,7 @@ private val DarkColors = darkColorScheme(
     surfaceContainerHighest = Color(0xFF222733),
     inverseSurface = Color(0xFFEDEFF5),
     inverseOnSurface = Color(0xFF12151D),
-    outline = Color(0xFF5E6678),
+    outline = Color(0xFF6E7689),
     outlineVariant = Color(0xFF1D222D),
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005),
@@ -90,7 +92,7 @@ private val LightColors = lightColorScheme(
     surface = Color(0xFFF3F4F8),
     onSurface = Color(0xFF0D1018),
     surfaceVariant = Color(0xFFE4E7EE),
-    onSurfaceVariant = Color(0xFF5D6475),
+    onSurfaceVariant = Color(0xFF4A5163),
     surfaceTint = Color(0xFF2257E0),
     surfaceDim = Color(0xFFDADCE3),
     surfaceBright = Color(0xFFFAFBFD),
@@ -119,7 +121,7 @@ data class ExtendedColors(
     val cardHigh: Color,
     /** Hairline border around cards. */
     val stroke: Color,
-    /** The floating navigation bar. */
+    /** The bottom navigation bar. */
     val chrome: Color,
     /** Live games: badges, red-zone text. */
     val live: Color,
@@ -135,7 +137,7 @@ private val DarkExtended = ExtendedColors(
     card = Color(0xFF10131A),
     cardHigh = Color(0xFF181C26),
     stroke = Color(0xFF1C212C),
-    chrome = Color(0xF2131721),
+    chrome = Color(0xFF0F1219),
     live = Color(0xFFFF4D5A),
     liveContainer = Color(0x2EFF4D5A),
     win = Color(0xFF34D399),
@@ -147,7 +149,7 @@ private val LightExtended = ExtendedColors(
     card = Color.White,
     cardHigh = Color(0xFFF1F3F7),
     stroke = Color(0xFFE3E6EE),
-    chrome = Color(0xF7FFFFFF),
+    chrome = Color.White,
     live = Color(0xFFDC2433),
     liveContainer = Color(0x1ADC2433),
     win = Color(0xFF0E9F6E),
@@ -200,6 +202,9 @@ val ScoreTextStyle = TextStyle(
     fontFeatureSettings = "tnum",
 )
 
+/** Secondary text on a team-colored header: white, a little softer than the title. */
+val OnHeroMuted = Color.White.copy(alpha = 0.88f)
+
 /** Small uppercase label above a group, e.g. "LIVE NOW". */
 val OverlineTextStyle = TextStyle(
     fontWeight = FontWeight.Bold,
@@ -235,8 +240,11 @@ fun SportsHubTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
             colorScheme = scheme,
             typography = AppTypography,
             shapes = AppShapes,
-            content = content,
-        )
+        ) {
+            // Text and icons with no color of their own follow the theme. Without this they
+            // fall back to black, which disappears on dark pages that aren't inside a Scaffold.
+            CompositionLocalProvider(LocalContentColor provides scheme.onBackground, content = content)
+        }
     }
 }
 

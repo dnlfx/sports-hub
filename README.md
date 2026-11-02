@@ -9,7 +9,7 @@ An Android sports app: live scores and stats, team pages, player profiles, plus 
 - **Game page**: score header in both teams' colors, scoring by quarter, a win probability chart, player stats per team (passing, rushing, receiving, defense, kicking; interceptions and fumbles are folded into those tables), and team stats.
 - **Win probability**: each team's chance play by play, shaded in team colors, with the plays that swung the game marked. Tap a marker or drag across the chart to read any play. Before kickoff, ESPN's matchup predictor shows instead.
 - **Teams**: every team by division, your teams first. A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score, team season stats, the roster and the depth chart.
-- **Players**: tap a player anywhere for their bio (height, weight, age, college, draft), this season's numbers and career stats by year.
+- **Players**: tap a player anywhere for their bio (height, weight, age, college, draft) right under their name and photo, this season's numbers and career stats by year. Only the stat categories that fit their position show, unless they really play both ways.
 - **Compare**: two teams or two players side by side, stat by stat, with the better number in each row in that side's color and a tally of who's ahead. Open it from a team or player page, or the Teams tab. Team stats compare per game where ESPN gives it; players compare their latest season or whole career.
 
 ## Stack
@@ -32,7 +32,7 @@ app/src/main/java/com/sportshub/app/
 - "Night game" look: an inky base, the app icon's electric blue as the accent and the football's orange for small highlights.
   Material 3 with a full custom color scheme for light and dark mode (`ui/theme/Theme.kt`).
   Colors Material has no role for (cards, borders, live red, win/loss) live in `SportsHubTheme.colors`.
-- A floating pill tab bar. Lists add `bottomListPadding()` so their last item scrolls clear of it.
+- A tab bar docked to the bottom edge, running under the system navigation bar. Pages sit above it, so nothing scrolls underneath; lists add `bottomListPadding()` for a little room at the end.
 - Game, team and player pages open with a full-width header in the team's colors.
 - Barlow Condensed for titles and scores, with tabular figures so digits don't shift; body text uses the system font.
   The font is under the SIL Open Font License (`licenses/BarlowCondensed-OFL.txt`).

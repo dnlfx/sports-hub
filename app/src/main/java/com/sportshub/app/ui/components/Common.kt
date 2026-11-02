@@ -69,7 +69,7 @@ fun SectionHeader(
             Text(
                 "$count",
                 style = OverlineTextStyle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Spacer(Modifier.weight(1f))

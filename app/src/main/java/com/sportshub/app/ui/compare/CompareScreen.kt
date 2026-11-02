@@ -65,6 +65,7 @@ import com.sportshub.app.ui.components.heroColor
 import com.sportshub.app.ui.scores.Section
 import com.sportshub.app.ui.scores.SectionSkeleton
 import com.sportshub.app.ui.theme.DisplayFamily
+import com.sportshub.app.ui.theme.OnHeroMuted
 import com.sportshub.app.ui.theme.OverlineTextStyle
 import com.sportshub.app.ui.theme.SportsHubTheme
 import kotlin.math.sqrt
@@ -383,7 +384,7 @@ private fun SlotFrame(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 4.dp),
         )
-        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.75f), maxLines = 1)
+        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = OnHeroMuted, maxLines = 1)
         Spacer(Modifier.height(8.dp))
         Text(
             if (empty) "Pick" else "Change",
