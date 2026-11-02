@@ -94,6 +94,7 @@ class GameDetailViewModel(
                 if (before == null || before == team) before ?: team
                 else team.copy(tables = team.tables.map { t -> keepIfEqual(before.tables.firstOrNull { it.key == t.key }, t) })
             },
+            winProbability = keepIfEqual(old.winProbability, new.winProbability),
         )
     }
 

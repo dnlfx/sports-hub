@@ -5,9 +5,12 @@ An Android sports app: live scores and stats, team pages, player profiles, plus 
 ## Features
 
 - **Scores**: live, upcoming and final games by week. Tap a game for its box score.
-- **Game page**: score header in both teams' colors, scoring by quarter, player stats per team (passing, rushing, receiving, defense, kicking; interceptions and fumbles are folded into those tables), and team stats.
-- **Teams**: every team by division. A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score, team season stats, the roster and the depth chart.
+- **Your teams**: follow teams with the star on a team page, or from the card on Scores. Their games lead the Scores tab under "Your teams", with a strip showing each team's week at a glance (live score, result, kickoff or bye). Saved on the device only; no notifications.
+- **Game page**: score header in both teams' colors, scoring by quarter, a win probability chart, player stats per team (passing, rushing, receiving, defense, kicking; interceptions and fumbles are folded into those tables), and team stats.
+- **Win probability**: each team's chance play by play, shaded in team colors, with the plays that swung the game marked. Tap a marker or drag across the chart to read any play. Before kickoff, ESPN's matchup predictor shows instead.
+- **Teams**: every team by division, your teams first. A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score, team season stats, the roster and the depth chart.
 - **Players**: tap a player anywhere for their bio (height, weight, age, college, draft), this season's numbers and career stats by year.
+- **Compare**: two teams or two players side by side, stat by stat, with the better number in each row in that side's color and a tally of who's ahead. Open it from a team or player page, or the Teams tab. Team stats compare per game where ESPN gives it; players compare their latest season or whole career.
 
 ## Stack
 
@@ -20,8 +23,8 @@ An Android sports app: live scores and stats, team pages, player profiles, plus 
 ```
 app/src/main/java/com/sportshub/app/
   model/      Sport, Game, Team, StreamSource (sport-agnostic)
-  data/       ScoresRepository (swappable data provider), SourcesRepository (saved URLs), page scanner
-  ui/         Scores, Watch and Sources tabs, game detail, player, shared components, theme
+  data/       ScoresRepository (swappable data provider), TeamRepository, FavoritesRepository (followed teams), SourcesRepository (saved URLs), page scanner
+  ui/         Scores, Teams, Watch and Sources tabs, game detail (with the win probability chart), team, player, compare, favorites, shared components, theme
 ```
 
 ## Design

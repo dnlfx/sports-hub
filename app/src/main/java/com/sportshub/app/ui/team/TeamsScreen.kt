@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.CompareArrows
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +45,7 @@ import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
 import com.sportshub.app.model.TeamListing
 import com.sportshub.app.ui.components.EmptyState
+import com.sportshub.app.ui.components.FavoriteStar
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.SectionHeader
 import com.sportshub.app.ui.components.SportMenuButton
@@ -60,6 +64,9 @@ fun TeamsScreen(
     onSelectSport: (Sport) -> Unit,
     viewModel: TeamsViewModel,
     onOpenTeam: (Team) -> Unit,
+    /** Followed teams' ids, in the order they were followed. */
+    favoriteIds: List<String>,
+    onCompare: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(sport) { viewModel.setSport(sport) }
@@ -72,7 +79,12 @@ fun TeamsScreen(
                 title = "Teams",
                 subtitle = "Schedules, stats, rosters and depth charts",
                 scrollBehavior = scrollBehavior,
-                actions = { SportMenuButton(selected = sport, onSelect = onSelectSport) },
+                actions = {
+                    IconButton(onClick = onCompare) {
+                        Icon(Icons.Outlined.CompareArrows, contentDescription = "Compare teams or players")
+                    }
+                    SportMenuButton(selected = sport, onSelect = onSelectSport)
+                },
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -84,13 +96,14 @@ fun TeamsScreen(
                 .fillMaxSize(),
             contentPadding = PaddingValues(bottom = bottomListPadding()),
         ) {
-            val groups = state.groups
+            val groups = state.groups?.let { withYourTeams(it, favoriteIds) }
+            val followed = favoriteIds.toSet()
             when {
                 groups != null -> groups.forEach { group ->
                     item(key = "header_${group.key}", contentType = "header") { SectionHeader(group.title) }
                     group.teams.chunked(4).forEachIndexed { row, teams ->
                         item(key = "row_${group.key}_$row", contentType = "row") {
-                            TeamRow(teams, state.records, onOpenTeam)
+                            TeamRow(teams, state.records, followed, onOpenTeam)
                         }
                     }
                 }
@@ -111,8 +124,16 @@ fun TeamsScreen(
     }
 }
 
+/** The divisions, led by a "Your teams" group when the user follows any. */
+private fun withYourTeams(groups: List<TeamGroup>, favoriteIds: List<String>): List<TeamGroup> {
+    if (favoriteIds.isEmpty()) return groups
+    val byId = groups.flatMap { it.teams }.associateBy { it.team.id }
+    val mine = favoriteIds.mapNotNull { byId[it] }
+    return if (mine.isEmpty()) groups else listOf(TeamGroup("yours", "", "Your teams", mine)) + groups
+}
+
 @Composable
-private fun TeamRow(teams: List<TeamListing>, records: Map<String, String>, onOpenTeam: (Team) -> Unit) {
+private fun TeamRow(teams: List<TeamListing>, records: Map<String, String>, followed: Set<String>, onOpenTeam: (Team) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -120,7 +141,9 @@ private fun TeamRow(teams: List<TeamListing>, records: Map<String, String>, onOp
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         teams.forEach { listing ->
-            TeamTile(listing, records[listing.team.id], Modifier.weight(1f)) { onOpenTeam(listing.team.copy(record = records[listing.team.id])) }
+            TeamTile(listing, records[listing.team.id], listing.team.id in followed, Modifier.weight(1f)) {
+                onOpenTeam(listing.team.copy(record = records[listing.team.id]))
+            }
         }
         // Keep tiles the same width in a short last row.
         repeat(4 - teams.size) { Spacer(Modifier.weight(1f)) }
@@ -129,10 +152,19 @@ private fun TeamRow(teams: List<TeamListing>, records: Map<String, String>, onOp
 
 /** A team as a tile: its logo on a wash of its color, with its name and record. */
 @Composable
-private fun TeamTile(listing: TeamListing, record: String?, modifier: Modifier, onClick: () -> Unit) {
+private fun TeamTile(listing: TeamListing, record: String?, followed: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val color = listing.team.accentColor()
+    Box(modifier) {
+        TeamTileBody(listing, record, color, onClick)
+        if (followed) FavoriteStar(Modifier.align(Alignment.TopEnd).padding(6.dp))
+    }
+}
+
+@Composable
+private fun TeamTileBody(listing: TeamListing, record: String?, color: Color, onClick: () -> Unit) {
     Column(
-        modifier
+        Modifier
+            .fillMaxWidth()
             .cardSurface(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .background(Brush.verticalGradient(listOf(color.copy(alpha = 0.22f), Color.Transparent)))

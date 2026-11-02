@@ -124,4 +124,34 @@ data class GameDetail(
     val leaders: List<Leader>,
     /** Per-player box score for each team. Empty before kickoff. */
     val playerStats: List<TeamPlayerStats> = emptyList(),
+    /** How each team's chances moved play by play, or ESPN's pregame pick. Null when ESPN has neither. */
+    val winProbability: WinProbability? = null,
+)
+
+/** What kind of play moved the game, for the marker on the win probability chart. */
+enum class PlayKind { Touchdown, FieldGoal, Safety, Turnover, Other }
+
+/** The home team's chance of winning right after one play, with the play itself when known. */
+@Immutable
+data class WinProbPoint(
+    /** From 0 to 1. The away team's chance is the rest, give or take a tie. */
+    val homeWinPct: Float,
+    val playId: String? = null,
+    val period: Int? = null,
+    val clock: String? = null,
+    val text: String? = null,
+    val awayScore: Int? = null,
+    val homeScore: Int? = null,
+    val isScoring: Boolean = false,
+    /** The team that had the ball. */
+    val teamId: String? = null,
+    val kind: PlayKind = PlayKind.Other,
+)
+
+@Immutable
+data class WinProbability(
+    /** One point per play, in order. Empty before kickoff. */
+    val points: List<WinProbPoint>,
+    /** ESPN's pregame chance for the home team, from 0 to 1. */
+    val pregameHomePct: Float? = null,
 )

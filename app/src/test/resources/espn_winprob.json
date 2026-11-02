@@ -1,0 +1,34 @@
+{
+  "header": {"id": "500", "competitions": [{"id": "500", "date": "2026-11-01T18:00Z",
+    "status": {"type": {"state": "in", "name": "STATUS_IN_PROGRESS", "shortDetail": "Q2 4:12"}, "period": 2, "displayClock": "4:12"},
+    "competitors": [
+      {"homeAway": "home", "score": "10", "team": {"id": "2", "abbreviation": "BUF", "shortDisplayName": "Bills"}},
+      {"homeAway": "away", "score": "7", "team": {"id": "15", "abbreviation": "MIA", "shortDisplayName": "Dolphins"}}
+    ]}]},
+  "drives": {
+    "previous": [
+      {"team": {"id": "15"}, "plays": [
+        {"id": "p1", "type": {"text": "Kickoff"}, "text": "Kickoff to MIA 25.", "period": {"number": 1}, "clock": {"displayValue": "15:00"}, "awayScore": 0, "homeScore": 0, "scoringPlay": false},
+        {"id": "p2", "type": {"text": "Passing Touchdown"}, "text": "T.Tagovailoa pass to T.Hill for 60 yds, TOUCHDOWN.", "period": {"number": 1}, "clock": {"displayValue": "12:30"}, "awayScore": 7, "homeScore": 0, "scoringPlay": true}
+      ]},
+      {"team": {"id": "2"}, "plays": [
+        {"id": "p3", "type": {"text": "Pass Interception Return"}, "text": "J.Allen pass INTERCEPTED.", "period": {"number": 1}, "clock": {"displayValue": "5:02"}, "awayScore": 7, "homeScore": 0, "scoringPlay": false}
+      ]}
+    ],
+    "current": {"team": {"id": "2"}, "plays": [
+      {"id": "p4", "type": {"text": "Rush"}, "text": "J.Cook up the middle for 4 yds.", "period": {"number": 2}, "clock": {"displayValue": "9:00"}, "awayScore": 7, "homeScore": 3, "scoringPlay": false}
+    ]}
+  },
+  "scoringPlays": [
+    {"id": "p5", "type": {"text": "Field Goal Good"}, "text": "T.Bass 40 yd field goal is GOOD.", "period": {"number": 2}, "clock": {"displayValue": "4:12"}, "awayScore": 7, "homeScore": 10, "team": {"id": "2"}}
+  ],
+  "winprobability": [
+    {"homeWinPercentage": 0.60, "playId": "p1"},
+    {"homeWinPercentage": 0.45, "playId": "p2"},
+    {"homeWinPercentage": 0.38, "playId": "p3"},
+    {"homeWinPercentage": 0.40, "playId": "p4"},
+    {"homeWinPercentage": 0.47, "playId": "p5"},
+    {"homeWinPercentage": 0.48}
+  ],
+  "predictor": {"homeTeam": {"id": "2", "gameProjection": "61.4"}, "awayTeam": {"id": "15", "gameProjection": "38.6"}}
+}

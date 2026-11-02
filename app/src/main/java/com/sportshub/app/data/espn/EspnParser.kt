@@ -5,6 +5,7 @@ import com.sportshub.app.model.Game
 import com.sportshub.app.model.GameDetail
 import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Leader
+import com.sportshub.app.model.PlayKind
 import com.sportshub.app.model.PlayerStatLine
 import com.sportshub.app.model.PlayerStatTable
 import com.sportshub.app.model.Scoreboard
@@ -13,6 +14,8 @@ import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
 import com.sportshub.app.model.TeamPlayerStats
 import com.sportshub.app.model.TeamStatRow
+import com.sportshub.app.model.WinProbPoint
+import com.sportshub.app.model.WinProbability
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import java.time.Instant
@@ -77,7 +80,90 @@ object EspnParser {
 
         val playerStats = root?.obj("boxscore")?.arr("players").orEmpty().mapNotNull { parseTeamPlayers(it.obj) }
 
-        return GameDetail(game = game, teamStats = rows, leaders = leaders, playerStats = playerStats)
+        return GameDetail(
+            game = game,
+            teamStats = rows,
+            leaders = leaders,
+            playerStats = playerStats,
+            winProbability = parseWinProbability(root),
+        )
+    }
+
+    /**
+     * The win probability line: ESPN's "winprobability" list (the home team's chance after
+     * each play), matched by play id to the plays in the drive log for their text, time and
+     * score. Before kickoff there is no line, only the "predictor" pregame pick.
+     */
+    internal fun parseWinProbability(root: JsonObject?): WinProbability? {
+        root ?: return null
+        val plays = playsById(root)
+        val points = root.arr("winprobability").orEmpty().mapNotNull { e ->
+            val o = e.obj ?: return@mapNotNull null
+            val pct = o.double("homeWinPercentage")?.toFloat()?.coerceIn(0f, 1f) ?: return@mapNotNull null
+            val id = o.str("playId")
+            id?.let { plays[it] }?.copy(homeWinPct = pct) ?: WinProbPoint(homeWinPct = pct, playId = id)
+        }
+        val pregame = root.obj("predictor")?.obj("homeTeam")?.let { it.double("gameProjection") ?: it.double("teamChanceWin") }
+            ?.let { (it / 100.0).toFloat().coerceIn(0f, 1f) }
+        if (points.isEmpty() && pregame == null) return null
+        return WinProbability(points = points, pregameHomePct = pregame)
+    }
+
+    /** Every play in the summary by id: from the drive log, plus the scoring plays list for anything it misses. */
+    private fun playsById(root: JsonObject): Map<String, WinProbPoint> {
+        val out = LinkedHashMap<String, WinProbPoint>()
+        val drives = root.obj("drives")
+        val driveList = drives?.arr("previous").orEmpty().mapNotNull { it.obj } + listOfNotNull(drives?.obj("current"))
+        driveList.forEach { drive ->
+            val teamId = drive.obj("team")?.str("id")
+            drive.arr("plays").orEmpty().forEach { p -> parsePlay(p.obj, teamId)?.let { out.putIfAbsent(it.playId!!, it) } }
+        }
+        // Some sports list plays at the top level instead.
+        root.arr("plays").orEmpty().forEach { p -> parsePlay(p.obj, null)?.let { out.putIfAbsent(it.playId!!, it) } }
+        root.arr("scoringPlays").orEmpty().forEach { p ->
+            val o = p.obj ?: return@forEach
+            val id = o.str("id") ?: return@forEach
+            val scoring = parsePlay(o, o.obj("team")?.str("id"), isScoring = true) ?: return@forEach
+            val known = out[id]
+            out[id] = if (known == null) {
+                scoring
+            } else {
+                known.copy(isScoring = true, kind = if (known.kind != PlayKind.Other) known.kind else scoring.kind)
+            }
+        }
+        return out
+    }
+
+    private fun parsePlay(p: JsonObject?, teamId: String?, isScoring: Boolean = false): WinProbPoint? {
+        p ?: return null
+        val id = p.str("id") ?: return null
+        val type = p.obj("type")?.str("text").orEmpty()
+        val scoring = isScoring || p.bool("scoringPlay") == true
+        return WinProbPoint(
+            homeWinPct = 0.5f,
+            playId = id,
+            period = p.obj("period")?.int("number"),
+            clock = p.obj("clock")?.str("displayValue"),
+            text = p.str("text")?.trim()?.takeIf { it.isNotEmpty() },
+            awayScore = p.int("awayScore"),
+            homeScore = p.int("homeScore"),
+            isScoring = scoring,
+            teamId = p.obj("team")?.str("id") ?: p.obj("start")?.obj("team")?.str("id") ?: teamId,
+            kind = playKind(type, p.obj("scoringType")?.str("abbreviation"), scoring),
+        )
+    }
+
+    /** Sorts a play by ESPN's play type, e.g. "Passing Touchdown" or "Pass Interception Return". */
+    internal fun playKind(type: String, scoringAbbreviation: String?, scoring: Boolean): PlayKind {
+        val t = type.lowercase()
+        return when {
+            scoringAbbreviation == "TD" || t.contains("touchdown") -> PlayKind.Touchdown
+            scoringAbbreviation == "FG" || (scoring && t.contains("field goal")) -> PlayKind.FieldGoal
+            scoringAbbreviation == "SF" || t.contains("safety") -> PlayKind.Safety
+            t.contains("interception") || t.contains("fumble recovery (opponent)") || t.contains("blocked") ||
+                t.contains("fumble lost") || t.contains("turnover") -> PlayKind.Turnover
+            else -> PlayKind.Other
+        }
     }
 
     /**

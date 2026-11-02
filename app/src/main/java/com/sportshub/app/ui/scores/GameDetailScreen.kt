@@ -75,6 +75,7 @@ import com.sportshub.app.model.Competitor
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.PlayerRef
+import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
 import com.sportshub.app.model.TeamStatRow
 import com.sportshub.app.ui.components.EmptyState
@@ -145,6 +146,20 @@ fun GameDetailScreen(
                     game.situation?.lastPlay?.let { play ->
                         item(key = "lastplay") {
                             Section("Last play") { Text(play, style = MaterialTheme.typography.bodyMedium) }
+                        }
+                    }
+
+                    val winProbability = detail?.winProbability
+                    if (game.status == GameStatus.Scheduled) {
+                        winProbability?.pregameHomePct?.let { pre ->
+                            item(key = "predictor") { MatchupPredictor(pre, game) }
+                        }
+                    } else {
+                        when {
+                            winProbability != null && winProbability.points.size >= 2 ->
+                                item(key = "winprob") { WinProbabilitySection(winProbability, game) }
+                            // ESPN charts every NFL game, so hold its place while the details load.
+                            waiting && game.sport == Sport.NFL -> item(key = "winprob") { WinProbabilitySkeleton() }
                         }
                     }
 

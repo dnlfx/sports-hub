@@ -2,6 +2,7 @@ package com.sportshub.app.ui.scores
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sportshub.app.data.FavoritesRepository
 import com.sportshub.app.data.ScoresRepository
 import com.sportshub.app.data.SlateRequest
 import com.sportshub.app.model.Scoreboard
@@ -11,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -28,7 +30,10 @@ data class ScoresUiState(
     val error: String? = null,
 )
 
-class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
+class ScoresViewModel(
+    private val repository: ScoresRepository,
+    private val favorites: FavoritesRepository,
+) : ViewModel() {
 
     private val _state = MutableStateFlow(startState(Sport.default))
     val state: StateFlow<ScoresUiState> = _state.asStateFlow()
@@ -36,10 +41,22 @@ class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
     private var loadJob: Job? = null
     private var lastFetchAtMs = 0L
 
+    init {
+        // Following or unfollowing a team moves its games in or out of "Your teams" straight away.
+        viewModelScope.launch {
+            favorites.teams.drop(1).collect {
+                _state.update { s -> s.board?.let { board -> s.copy(sections = sectionsFor(board, s.sport)) } ?: s }
+            }
+        }
+    }
+
+    private fun sectionsFor(board: Scoreboard, sport: Sport): List<GameSection> =
+        sectionsOf(board, favoriteIds = favorites.teams(sport).mapTo(HashSet()) { it.id })
+
     /** Scores already in memory, shown on the first frame instead of a loading placeholder. */
     private fun startState(sport: Sport): ScoresUiState =
         repository.peekScoreboard(sport)?.let { board ->
-            ScoresUiState(sport = sport, board = board, sections = sectionsOf(board), currentWeek = board.week, isLoading = false)
+            ScoresUiState(sport = sport, board = board, sections = sectionsFor(board, sport), currentWeek = board.week, isLoading = false)
         } ?: ScoresUiState(sport = sport)
 
     fun setSport(sport: Sport) {
@@ -54,7 +71,7 @@ class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
             // Show the last saved scores straight away, then refresh in place.
             repository.cachedScoreboard(sport)?.let { cached ->
                 _state.update {
-                    it.copy(board = cached, sections = sectionsOf(cached), currentWeek = cached.week, isLoading = false)
+                    it.copy(board = cached, sections = sectionsFor(cached, sport), currentWeek = cached.week, isLoading = false)
                 }
             }
             fetch(showSpinner = false)
@@ -103,7 +120,7 @@ class ScoresViewModel(private val repository: ScoresRepository) : ViewModel() {
                 onSuccess = { board ->
                     s.copy(
                         board = board,
-                        sections = sectionsOf(board),
+                        sections = sectionsFor(board, s.sport),
                         currentWeek = if (request.isCurrent) board.week else s.currentWeek,
                         isLoading = false,
                         isRefreshing = false,
