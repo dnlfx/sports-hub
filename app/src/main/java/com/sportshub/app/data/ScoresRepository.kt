@@ -65,7 +65,12 @@ class EspnScoresRepository(
 
     override suspend fun gameDetail(sport: Sport, gameId: String): Result<GameDetail> = runCatching {
         val body = client.summary(sport, gameId)
-        var detail = withContext(Dispatchers.Default) { EspnParser.parseSummary(sport, body) }
+        var detail = withContext(Dispatchers.Default) {
+            // Box score tables as shown: interceptions and fumbles folded in, punts and returns left out.
+            EspnParser.parseSummary(sport, body).let { d ->
+                d.copy(playerStats = d.playerStats.map { it.copy(tables = BoxScore.fold(it.tables)) }.filter { it.tables.isNotEmpty() })
+            }
+        }
         val game = detail.game
         // The game summary doesn't always carry the live down & distance. The scoreboard
         // always does, so borrow it from there rather than let it blink out of the header.

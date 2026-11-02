@@ -68,6 +68,8 @@ import com.sportshub.app.model.Sport
 import com.sportshub.app.model.StreamSource
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.SectionHeader
+import com.sportshub.app.ui.components.LocalBottomBarSpace
+import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.components.SportChips
 import com.sportshub.app.ui.theme.SportsHubTheme
 import kotlinx.coroutines.launch
@@ -142,7 +144,7 @@ fun SourcesScreen(
                 scrollBehavior = scrollBehavior,
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SnackbarHost(snackbar, modifier = Modifier.padding(bottom = LocalBottomBarSpace.current)) },
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { padding ->
@@ -151,7 +153,7 @@ fun SourcesScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .imePadding(),
-            contentPadding = PaddingValues(bottom = 24.dp),
+            contentPadding = PaddingValues(bottom = bottomListPadding()),
         ) {
             item(key = "form") {
                 Card(

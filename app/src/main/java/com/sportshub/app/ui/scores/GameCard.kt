@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +46,7 @@ import com.sportshub.app.model.GameStatus
 import com.sportshub.app.ui.components.LiveBadge
 import com.sportshub.app.ui.components.TeamLogo
 import com.sportshub.app.ui.components.accentColor
+import com.sportshub.app.ui.components.cardSurface
 import com.sportshub.app.ui.components.shimmer
 import com.sportshub.app.ui.theme.ScoreTextStyle
 import com.sportshub.app.ui.theme.SportsHubTheme
@@ -77,40 +80,52 @@ fun GameCard(game: Game, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val awayColor = game.away.team.accentColor()
     val homeColor = game.home.team.accentColor()
     val colors = SportsHubTheme.colors
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = colors.card),
-        border = if (game.isLive) BorderStroke(1.dp, colors.live.copy(alpha = 0.35f)) else null,
-    ) {
-        Column(
-            Modifier
-                // Team-color stripe down the left edge: away on top, home below.
-                .drawBehind {
-                    drawRect(
-                        brush = Brush.verticalGradient(listOf(awayColor, homeColor)),
-                        topLeft = Offset.Zero,
-                        size = Size(4.dp.toPx(), size.height),
-                    )
-                }
-                .padding(start = 18.dp, end = 14.dp, top = 14.dp, bottom = 14.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TeamLine(game.away, game, opponent = game.home)
-                    TeamLine(game.home, game, opponent = game.away)
-                }
-                VerticalDivider(
-                    Modifier
-                        .padding(start = 12.dp)
-                        .height(56.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant,
+    val live = game.isLive
+    Column(
+        modifier
+            .fillMaxWidth()
+            .cardSurface()
+            .clickable(onClick = onClick)
+            // A soft wash of each team's color from the left edge: away on top, home below.
+            .drawBehind {
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        0f to awayColor.copy(alpha = 0.16f),
+                        0.45f to Color.Transparent,
+                        endX = size.width,
+                    ),
+                    size = Size(size.width, size.height / 2f),
                 )
-                StatusColumn(game, Modifier.width(88.dp))
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        0f to homeColor.copy(alpha = 0.16f),
+                        0.45f to Color.Transparent,
+                        endX = size.width,
+                    ),
+                    topLeft = Offset(0f, size.height / 2f),
+                    size = Size(size.width, size.height / 2f),
+                )
+                if (live) {
+                    drawRect(colors.live, size = Size(size.width, 3.dp.toPx()))
+                }
             }
-            SituationFooter(game)
+            .padding(start = 16.dp, end = 14.dp, top = 16.dp, bottom = 16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TeamLine(game.away, game, opponent = game.home)
+                TeamLine(game.home, game, opponent = game.away)
+            }
+            Box(
+                Modifier
+                    .padding(start = 12.dp)
+                    .width(1.dp)
+                    .height(60.dp)
+                    .background(colors.stroke),
+            )
+            StatusColumn(game, Modifier.width(88.dp))
         }
+        SituationFooter(game)
     }
 }
 
@@ -120,7 +135,7 @@ private fun TeamLine(side: Competitor, game: Game, opponent: Competitor) {
     val lost = final && opponent.isWinner
     val hasBall = game.situation?.possessionTeamId == side.team.id
     Row(verticalAlignment = Alignment.CenterVertically) {
-        TeamLogo(side.team, size = 32.dp, modifier = Modifier.alpha(if (lost) 0.55f else 1f))
+        TeamLogo(side.team, size = 34.dp, modifier = Modifier.alpha(if (lost) 0.5f else 1f))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -216,13 +231,19 @@ private fun StatusColumn(game: Game, modifier: Modifier) {
 private fun SituationFooter(game: Game) {
     val situation = game.situation ?: return
     if (situation.downDistance == null && situation.lastPlay == null) return
-    HorizontalDivider(Modifier.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.outlineVariant)
+    Spacer(Modifier.height(12.dp))
     situation.downDistance?.let {
+        val redZone = situation.isRedZone
         Text(
-            if (situation.isRedZone) "$it · Red zone" else it,
+            if (redZone) "$it · Red zone" else it,
             style = MaterialTheme.typography.labelLarge,
-            color = if (situation.isRedZone) SportsHubTheme.colors.live else MaterialTheme.colorScheme.onSurface,
+            color = if (redZone) SportsHubTheme.colors.live else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(if (redZone) SportsHubTheme.colors.liveContainer else SportsHubTheme.colors.cardHigh)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
         )
+        Spacer(Modifier.height(6.dp))
     }
     situation.lastPlay?.let {
         Text(
@@ -238,12 +259,8 @@ private fun SituationFooter(game: Game) {
 /** Placeholder shaped like a [GameCard], shown while scores load. */
 @Composable
 fun GameCardSkeleton(modifier: Modifier = Modifier) {
-    val block = MaterialTheme.colorScheme.surfaceContainerHigh
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = SportsHubTheme.colors.card),
-    ) {
+    val block = SportsHubTheme.colors.cardHigh
+    Box(modifier.fillMaxWidth().cardSurface()) {
         Row(
             Modifier
                 .padding(start = 18.dp, end = 14.dp, top = 16.dp, bottom = 16.dp)

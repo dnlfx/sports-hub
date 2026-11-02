@@ -24,82 +24,85 @@ import com.sportshub.app.R
 
 // ---------------------------------------------------------------------------
 // Color
+//
+// "Night game": an inky stadium-at-night base, the electric blue of the app icon
+// as the main accent, and the football's ember orange for small highlights.
 // ---------------------------------------------------------------------------
 
-/** Brand blue, used for the app icon and as the base of the color scheme. */
+/** Brand blue, from the app icon. */
 val Accent = Color(0xFF3D7BFF)
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF7FA8FF),
-    onPrimary = Color(0xFF002A6B),
-    primaryContainer = Color(0xFF1E3F8C),
-    onPrimaryContainer = Color(0xFFDAE3FF),
+    primary = Color(0xFF6E9BFF),
+    onPrimary = Color(0xFF001B4D),
+    primaryContainer = Color(0xFF17306B),
+    onPrimaryContainer = Color(0xFFDCE5FF),
     inversePrimary = Color(0xFF2A64E8),
-    secondary = Color(0xFFB7C5E4),
-    onSecondary = Color(0xFF1F2C45),
-    secondaryContainer = Color(0xFF26324B),
-    onSecondaryContainer = Color(0xFFD8E2FB),
-    tertiary = Color(0xFFFFB870),
-    onTertiary = Color(0xFF4A2800),
-    tertiaryContainer = Color(0xFF693C00),
-    onTertiaryContainer = Color(0xFFFFDCBE),
-    background = Color(0xFF0D0F14),
-    onBackground = Color(0xFFE6E8EE),
-    surface = Color(0xFF0D0F14),
-    onSurface = Color(0xFFE6E8EE),
-    surfaceVariant = Color(0xFF242832),
-    onSurfaceVariant = Color(0xFFA2A8B6),
-    surfaceTint = Color(0xFF7FA8FF),
-    surfaceDim = Color(0xFF0D0F14),
-    surfaceBright = Color(0xFF33373F),
-    surfaceContainerLowest = Color(0xFF08090C),
-    surfaceContainerLow = Color(0xFF13161C),
-    surfaceContainer = Color(0xFF181B22),
-    surfaceContainerHigh = Color(0xFF1F232B),
-    surfaceContainerHighest = Color(0xFF292D36),
-    inverseSurface = Color(0xFFE2E4EA),
-    inverseOnSurface = Color(0xFF2B2E35),
-    outline = Color(0xFF7D8494),
-    outlineVariant = Color(0xFF2C313B),
+    secondary = Color(0xFFB4C0DA),
+    onSecondary = Color(0xFF1C2639),
+    secondaryContainer = Color(0xFF1C2333),
+    onSecondaryContainer = Color(0xFFD9E1F5),
+    tertiary = Color(0xFFFF9A52),
+    onTertiary = Color(0xFF3F1C00),
+    tertiaryContainer = Color(0xFF5A2D07),
+    onTertiaryContainer = Color(0xFFFFDCC6),
+    background = Color(0xFF07090E),
+    onBackground = Color(0xFFEDEFF5),
+    surface = Color(0xFF07090E),
+    onSurface = Color(0xFFEDEFF5),
+    surfaceVariant = Color(0xFF1B202B),
+    onSurfaceVariant = Color(0xFF8D95A7),
+    surfaceTint = Color(0xFF6E9BFF),
+    surfaceDim = Color(0xFF07090E),
+    surfaceBright = Color(0xFF2B303B),
+    surfaceContainerLowest = Color(0xFF040507),
+    surfaceContainerLow = Color(0xFF0E1118),
+    surfaceContainer = Color(0xFF12151D),
+    surfaceContainerHigh = Color(0xFF191D27),
+    surfaceContainerHighest = Color(0xFF222733),
+    inverseSurface = Color(0xFFEDEFF5),
+    inverseOnSurface = Color(0xFF12151D),
+    outline = Color(0xFF5E6678),
+    outlineVariant = Color(0xFF1D222D),
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005),
-    errorContainer = Color(0xFF93000A),
+    errorContainer = Color(0xFF5C1016),
     onErrorContainer = Color(0xFFFFDAD6),
     scrim = Color.Black,
 )
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF2A64E8),
+    primary = Color(0xFF2257E0),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDAE3FF),
-    onPrimaryContainer = Color(0xFF001A43),
-    inversePrimary = Color(0xFF7FA8FF),
-    secondary = Color(0xFF4F5D78),
+    primaryContainer = Color(0xFFDCE5FF),
+    onPrimaryContainer = Color(0xFF00184A),
+    inversePrimary = Color(0xFF6E9BFF),
+    secondary = Color(0xFF4B5873),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFDCE3F5),
-    onSecondaryContainer = Color(0xFF0B1A33),
-    tertiary = Color(0xFF8A5100),
+    secondaryContainer = Color(0xFFE3E8F4),
+    onSecondaryContainer = Color(0xFF111B2F),
+    tertiary = Color(0xFFC85A12),
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFFFDCBE),
-    onTertiaryContainer = Color(0xFF2C1600),
-    background = Color(0xFFF4F5F9),
-    onBackground = Color(0xFF12141A),
-    surface = Color(0xFFF4F5F9),
-    onSurface = Color(0xFF12141A),
-    surfaceVariant = Color(0xFFE1E4EC),
-    onSurfaceVariant = Color(0xFF5A6070),
-    surfaceTint = Color(0xFF2A64E8),
-    surfaceDim = Color(0xFFD9DBE2),
-    surfaceBright = Color(0xFFF9FAFD),
+    tertiaryContainer = Color(0xFFFFDCC6),
+    onTertiaryContainer = Color(0xFF331300),
+    background = Color(0xFFF3F4F8),
+    onBackground = Color(0xFF0D1018),
+    surface = Color(0xFFF3F4F8),
+    onSurface = Color(0xFF0D1018),
+    surfaceVariant = Color(0xFFE4E7EE),
+    onSurfaceVariant = Color(0xFF5D6475),
+    surfaceTint = Color(0xFF2257E0),
+    surfaceDim = Color(0xFFDADCE3),
+    surfaceBright = Color(0xFFFAFBFD),
     surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFEFF1F5),
-    surfaceContainer = Color(0xFFE9EBF1),
-    surfaceContainerHigh = Color(0xFFE3E6ED),
-    surfaceContainerHighest = Color(0xFFDDE0E8),
-    inverseSurface = Color(0xFF2B2E35),
-    inverseOnSurface = Color(0xFFEFF1F6),
-    outline = Color(0xFF757B8A),
-    outlineVariant = Color(0xFFD7DBE4),
+    surfaceContainerLow = Color(0xFFF6F7FA),
+    surfaceContainer = Color(0xFFEEF0F4),
+    surfaceContainerHigh = Color(0xFFE8EAF0),
+    surfaceContainerHighest = Color(0xFFE1E4EB),
+    inverseSurface = Color(0xFF151922),
+    inverseOnSurface = Color(0xFFF1F3F8),
+    outline = Color(0xFF7B8293),
+    outlineVariant = Color(0xFFE2E5EC),
     error = Color(0xFFBA1A1A),
     onError = Color.White,
     errorContainer = Color(0xFFFFDAD6),
@@ -112,25 +115,44 @@ private val LightColors = lightColorScheme(
 data class ExtendedColors(
     /** Cards and list tiles that sit on the background. */
     val card: Color,
-    /** Navigation bar and scrolled top bar. */
+    /** A step up from [card]: chips, table headers, pressed rows. */
+    val cardHigh: Color,
+    /** Hairline border around cards. */
+    val stroke: Color,
+    /** The floating navigation bar. */
     val chrome: Color,
     /** Live games: badges, red-zone text. */
     val live: Color,
     val liveContainer: Color,
+    /** Wins on a schedule. */
+    val win: Color,
+    /** Losses on a schedule. */
+    val loss: Color,
+    val isDark: Boolean,
 )
 
 private val DarkExtended = ExtendedColors(
-    card = Color(0xFF181B22),
-    chrome = Color(0xFF13161C),
-    live = Color(0xFFFF5A60),
-    liveContainer = Color(0x33FF5A60),
+    card = Color(0xFF10131A),
+    cardHigh = Color(0xFF181C26),
+    stroke = Color(0xFF1C212C),
+    chrome = Color(0xF2131721),
+    live = Color(0xFFFF4D5A),
+    liveContainer = Color(0x2EFF4D5A),
+    win = Color(0xFF34D399),
+    loss = Color(0xFFFF6B6B),
+    isDark = true,
 )
 
 private val LightExtended = ExtendedColors(
     card = Color.White,
-    chrome = Color.White,
-    live = Color(0xFFD7262E),
-    liveContainer = Color(0x1FD7262E),
+    cardHigh = Color(0xFFF1F3F7),
+    stroke = Color(0xFFE3E6EE),
+    chrome = Color(0xF7FFFFFF),
+    live = Color(0xFFDC2433),
+    liveContainer = Color(0x1ADC2433),
+    win = Color(0xFF0E9F6E),
+    loss = Color(0xFFD9363E),
+    isDark = false,
 )
 
 private val LocalExtendedColors = staticCompositionLocalOf { DarkExtended }
@@ -148,12 +170,20 @@ val DisplayFamily = FontFamily(
 
 private val AppTypography = Typography().run {
     copy(
+        displayLarge = displayLarge.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.ExtraBold),
+        displayMedium = displayMedium.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.ExtraBold),
         displaySmall = displaySmall.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.ExtraBold),
-        headlineLarge = headlineLarge.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp, lineHeight = 40.sp),
+        headlineLarge = headlineLarge.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.ExtraBold, fontSize = 38.sp, lineHeight = 42.sp),
         // Large top app bars use headlineMedium for the expanded title.
-        headlineMedium = headlineMedium.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp, lineHeight = 40.sp),
+        headlineMedium = headlineMedium.copy(
+            fontFamily = DisplayFamily,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 40.sp,
+            lineHeight = 44.sp,
+            letterSpacing = (-0.5).sp,
+        ),
         headlineSmall = headlineSmall.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.Bold),
-        titleLarge = titleLarge.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.Bold, fontSize = 24.sp),
+        titleLarge = titleLarge.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.Bold, fontSize = 23.sp, letterSpacing = 0.2.sp),
         titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold),
         titleSmall = titleSmall.copy(fontWeight = FontWeight.SemiBold),
         labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -173,9 +203,16 @@ val ScoreTextStyle = TextStyle(
 /** Small uppercase label above a group, e.g. "LIVE NOW". */
 val OverlineTextStyle = TextStyle(
     fontWeight = FontWeight.Bold,
-    fontSize = 12.sp,
+    fontSize = 11.sp,
     lineHeight = 16.sp,
-    letterSpacing = 1.sp,
+    letterSpacing = 1.2.sp,
+)
+
+/** Numbers in stat tables: tabular so columns line up. */
+val TableNumberStyle = TextStyle(
+    fontSize = 14.sp,
+    lineHeight = 20.sp,
+    fontFeatureSettings = "tnum",
 )
 
 // ---------------------------------------------------------------------------
@@ -186,8 +223,8 @@ private val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
     small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(22.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp),
 )
 
 @Composable

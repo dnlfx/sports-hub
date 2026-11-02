@@ -14,6 +14,7 @@ import java.io.IOException
  */
 class EspnClient(private val http: OkHttpClient) {
     private val base = "https://site.api.espn.com/apis/site/v2/sports"
+    private val webBase = "https://site.web.api.espn.com/apis/common/v3/sports"
 
     suspend fun scoreboard(sport: Sport, season: Int? = null, seasonType: Int? = null, week: Int? = null): String {
         val params = buildList {
@@ -27,6 +28,28 @@ class EspnClient(private val http: OkHttpClient) {
 
     suspend fun summary(sport: Sport, eventId: String): String =
         get("$base/${sport.espnPath}/summary?event=$eventId")
+
+    suspend fun teams(sport: Sport): String = get("$base/${sport.espnPath}/teams")
+
+    suspend fun team(sport: Sport, teamId: String): String = get("$base/${sport.espnPath}/teams/$teamId")
+
+    suspend fun teamSchedule(sport: Sport, teamId: String, seasonType: Int): String =
+        get("$base/${sport.espnPath}/teams/$teamId/schedule?seasontype=$seasonType")
+
+    suspend fun teamStatistics(sport: Sport, teamId: String): String =
+        get("$base/${sport.espnPath}/teams/$teamId/statistics")
+
+    suspend fun roster(sport: Sport, teamId: String): String = get("$base/${sport.espnPath}/teams/$teamId/roster")
+
+    suspend fun depthCharts(sport: Sport, teamId: String): String =
+        get("$base/${sport.espnPath}/teams/$teamId/depthcharts")
+
+    /** A player's bio and headline stats. */
+    suspend fun athlete(sport: Sport, athleteId: String): String = get("$webBase/${sport.espnPath}/athletes/$athleteId")
+
+    /** A player's stats for every season of their career. */
+    suspend fun athleteStats(sport: Sport, athleteId: String): String =
+        get("$webBase/${sport.espnPath}/athletes/$athleteId/stats")
 
     /** GET with up to 3 attempts and a short backoff, so a brief network drop doesn't surface as an error. */
     private suspend fun get(url: String): String = withContext(Dispatchers.IO) {

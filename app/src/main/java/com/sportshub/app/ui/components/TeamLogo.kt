@@ -71,3 +71,18 @@ fun Team.accentColor(fallback: Color = MaterialTheme.colorScheme.outline): Color
         else -> base
     }
 }
+
+/**
+ * A deep version of the team's color for big headers with white text on them:
+ * bright colors are darkened until white reads well on top.
+ */
+fun Team.heroColor(): Color {
+    val base = parseHexColor(primaryColor) ?: Color(0xFF1E3F8C)
+    val lum = base.luminance()
+    return when {
+        lum > 0.45f -> lerp(base, Color.Black, 0.55f)
+        lum > 0.2f -> lerp(base, Color.Black, 0.35f)
+        lum < 0.02f -> lerp(base, Color(0xFF2A2F3A), 0.6f)
+        else -> lerp(base, Color.Black, 0.12f)
+    }
+}

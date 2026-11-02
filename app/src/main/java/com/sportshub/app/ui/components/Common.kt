@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -39,7 +40,7 @@ fun SectionHeader(
     modifier: Modifier = Modifier,
     count: Int? = null,
     accent: Boolean = false,
-    padding: PaddingValues = PaddingValues(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 4.dp),
+    padding: PaddingValues = PaddingValues(start = 20.dp, end = 12.dp, top = 18.dp, bottom = 6.dp),
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
@@ -49,6 +50,15 @@ fun SectionHeader(
             .semantics { heading() },
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (accent) {
+            Box(
+                Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(SportsHubTheme.colors.live),
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             title.uppercase(),
             style = OverlineTextStyle,
@@ -69,7 +79,7 @@ fun SectionHeader(
 
 /** Pulsing "LIVE" pill. The pulse runs in the draw phase, so it doesn't recompose every frame. */
 @Composable
-fun LiveBadge(modifier: Modifier = Modifier) {
+fun LiveBadge(modifier: Modifier = Modifier, onDark: Boolean = false) {
     val transition = rememberInfiniteTransition(label = "live")
     val pulse by transition.animateFloat(
         initialValue = 1f,
@@ -81,7 +91,7 @@ fun LiveBadge(modifier: Modifier = Modifier) {
     Row(
         modifier
             .clip(CircleShape)
-            .background(colors.liveContainer)
+            .background(if (onDark) colors.live else colors.liveContainer)
             .padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -90,10 +100,10 @@ fun LiveBadge(modifier: Modifier = Modifier) {
                 .size(6.dp)
                 .graphicsLayer { alpha = pulse }
                 .clip(CircleShape)
-                .background(colors.live),
+                .background(if (onDark) Color.White else colors.live),
         )
         Spacer(Modifier.width(5.dp))
-        Text("LIVE", color = colors.live, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp)
+        Text("LIVE", color = if (onDark) Color.White else colors.live, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp)
     }
 }
 

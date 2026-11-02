@@ -13,12 +13,8 @@ import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
 import com.sportshub.app.model.TeamPlayerStats
 import com.sportshub.app.model.TeamStatRow
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -29,7 +25,7 @@ import java.time.format.DateTimeFormatter
  */
 object EspnParser {
 
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val json = EspnJson
 
     fun parseScoreboard(sport: Sport, body: String, fetchedAtEpochMs: Long = System.currentTimeMillis()): Scoreboard {
         val root = json.parseToJsonElement(body).obj
@@ -165,7 +161,7 @@ object EspnParser {
     }
 
     /** "J. Allen" style name: ESPN's short name, or built from first and last name. */
-    private fun shortName(athlete: JsonObject): String? {
+    internal fun shortName(athlete: JsonObject): String? {
         athlete.str("shortName")?.let { return it }
         val first = athlete.str("firstName")?.trim().orEmpty()
         val last = athlete.str("lastName")?.trim().orEmpty()
@@ -173,7 +169,7 @@ object EspnParser {
         return athlete.str("displayName") ?: athlete.str("fullName")
     }
 
-    private fun headshot(athlete: JsonObject?): String? =
+    internal fun headshot(athlete: JsonObject?): String? =
         EspnImages.canonical(athlete?.obj("headshot")?.str("href") ?: athlete?.str("headshot"))
 
     private fun JsonObject?.statMap(): Map<String, String> =
@@ -183,7 +179,7 @@ object EspnParser {
             name to (o.str("displayValue") ?: "-")
         }.toMap()
 
-    private fun parseEvent(sport: Sport, event: JsonObject?): Game {
+    internal fun parseEvent(sport: Sport, event: JsonObject?): Game {
         requireNotNull(event)
         val comp = event.arr("competitions")?.firstOrNull()?.obj ?: event
         val competitors = comp.arr("competitors").orEmpty().mapNotNull { it.obj }
@@ -238,13 +234,13 @@ object EspnParser {
         }
     }.distinct()
 
-    private fun parseCompetitor(c: JsonObject): Competitor {
+    internal fun parseCompetitor(c: JsonObject): Competitor {
         val team = c.obj("team")
         val records = c.arr("records") ?: c.arr("record")
         val overall = records.orEmpty().mapNotNull { it.obj }.let { list ->
             (list.firstOrNull { it.str("type") == "total" || it.str("name") == "overall" } ?: list.firstOrNull())
                 ?.let { it.str("summary") ?: it.str("displayValue") }
-        }
+        } ?: c.str("record")
         val logo = EspnImages.canonical(
             team?.str("logo") ?: team?.arr("logos")?.firstOrNull()?.obj?.str("href"),
         )
@@ -283,7 +279,7 @@ object EspnParser {
         }
     }
 
-    private fun parseLeaderCategory(cat: JsonObject?, teamId: String?): Leader? {
+    internal fun parseLeaderCategory(cat: JsonObject?, teamId: String?): Leader? {
         cat ?: return null
         val top = cat.arr("leaders")?.firstOrNull()?.obj ?: return null
         val athlete = top.obj("athlete") ?: return null
@@ -294,6 +290,7 @@ object EspnParser {
             summary = top.str("displayValue") ?: "",
             teamId = top.obj("team")?.str("id") ?: athlete.obj("team")?.str("id") ?: teamId,
             position = athlete.obj("position")?.str("abbreviation"),
+            athleteId = athlete.str("id"),
         )
     }
 
@@ -312,13 +309,4 @@ object EspnParser {
             ?: runCatching { Instant.parse(raw.replace("Z", ":00Z")) }.getOrNull()
             ?: Instant.EPOCH
     }
-
-    // Small JSON helpers that never throw.
-    private val JsonElement?.obj: JsonObject? get() = this as? JsonObject
-    private fun JsonObject.obj(key: String): JsonObject? = this[key] as? JsonObject
-    private fun JsonObject.arr(key: String): JsonArray? = this[key] as? JsonArray
-    private fun JsonObject.str(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
-    private fun JsonObject.int(key: String): Int? = str(key)?.toDoubleOrNull()?.toInt()
-    private fun JsonObject.bool(key: String): Boolean? = str(key)?.toBooleanStrictOrNull()
-    private fun JsonElement.primitiveString(): String? = (this as? JsonPrimitive)?.contentOrNull
 }

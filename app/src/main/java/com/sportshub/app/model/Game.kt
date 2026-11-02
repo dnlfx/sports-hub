@@ -48,6 +48,7 @@ data class Leader(
     val teamId: String?,
     /** Position abbreviation like "QB", when known. */
     val position: String? = null,
+    val athleteId: String? = null,
 )
 
 /** One player's line in a box score table, e.g. a passer's C/ATT, YDS, TD, INT. */

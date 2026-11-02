@@ -1,0 +1,5 @@
+{"team":{"id":"2","abbreviation":"BUF","displayName":"Buffalo Bills","shortDisplayName":"Bills","color":"00338d","alternateColor":"d50a0a",
+ "logos":[{"href":"https://a.espncdn.com/i/teamlogos/nfl/500/buf.png"}],"standingSummary":"1st in AFC East",
+ "record":{"items":[
+  {"type":"total","summary":"4-1","stats":[{"name":"avgPointsFor","value":27.4},{"name":"avgPointsAgainst","value":19.2},{"name":"pointDifferential","value":41.0},{"name":"streak","value":3.0}]},
+  {"type":"home","summary":"2-1","stats":[]},{"type":"road","summary":"2-0","stats":[]}]}}}

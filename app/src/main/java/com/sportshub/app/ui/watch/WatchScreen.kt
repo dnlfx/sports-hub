@@ -72,6 +72,7 @@ import com.sportshub.app.ui.components.EmptyState
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.LiveBadge
 import com.sportshub.app.ui.components.SectionHeader
+import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.components.SportMenuButton
 import com.sportshub.app.ui.components.TeamLogo
 import com.sportshub.app.ui.player.PlayerActivity
@@ -125,7 +126,7 @@ fun WatchScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp),
+            contentPadding = PaddingValues(bottom = bottomListPadding()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (games.isNotEmpty()) {

@@ -1,0 +1,7 @@
+{"teams":{"2":{"id":"2","abbreviation":"BUF"}},"categories":[
+ {"name":"passing","displayName":"Passing","labels":["GP","CMP","YDS"],"statistics":[
+   {"teamId":"2","season":{"year":2025},"stats":["17","319","3,668"]},
+   {"teamId":"2","season":{"year":2026},"stats":["6","114","1,504"]}],"totals":["23","433","5,172"]},
+ {"name":"punting","displayName":"Punting","labels":["P"],"statistics":[{"season":{"year":2026},"stats":["1"]}]},
+ {"name":"kicking","displayName":"Kicking","labels":["1-19\t"],"statistics":[{"season":{"year":2026},"stats":["0-0"]}]}
+]}

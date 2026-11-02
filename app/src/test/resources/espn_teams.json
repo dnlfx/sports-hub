@@ -1,0 +1,5 @@
+{"sports":[{"leagues":[{"teams":[
+ {"team":{"id":"2","abbreviation":"BUF","displayName":"Buffalo Bills","shortDisplayName":"Bills","color":"00338d","isActive":true,"logos":[{"href":"https://a.espncdn.com/i/teamlogos/nfl/500/buf.png"}]}},
+ {"team":{"id":"15","abbreviation":"MIA","displayName":"Miami Dolphins","shortDisplayName":"Dolphins","color":"008e97","logos":[{"href":"https://a.espncdn.com/i/teamlogos/nfl/500/mia.png"}]}},
+ {"team":{"id":"99","abbreviation":"OLD","displayName":"Old Team","shortDisplayName":"Old","isActive":false}}
+]}]}]}

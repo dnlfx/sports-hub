@@ -1,0 +1,6 @@
+{"athlete":{"id":"3918298","displayName":"Josh Allen","fullName":"Josh Allen","jersey":"17","college":{"name":"Wyoming"},
+ "position":{"abbreviation":"QB","displayName":"Quarterback"},"headshot":{"href":"https://a.espncdn.com/i/headshots/nfl/players/full/3918298.png"},
+ "team":{"id":"2","displayName":"Buffalo Bills","shortDisplayName":"Bills","abbreviation":"BUF","color":"00338d"},
+ "displayHeight":"6' 5\"","displayWeight":"237 lbs","age":30,"displayDOB":"21/5/1996","displayBirthPlace":"Firebaugh, CA",
+ "displayDraft":"2018: Rd 1, Pk 7 (BUF)","displayExperience":"9th Season","status":{"name":"Active"},
+ "statsSummary":{"displayName":"2026 regular season stats","statistics":[{"abbreviation":"YDS","displayValue":"1,504","rankDisplayValue":"15th"},{"abbreviation":"QBR","displayValue":"76.6"}]}}}

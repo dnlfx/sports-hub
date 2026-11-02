@@ -1,0 +1,8 @@
+{"status":"success","results":{"season":{"year":2026},"stats":{"categories":[
+ {"name":"passing","stats":[
+   {"name":"completionPct","displayName":"Completion Percentage","displayValue":"69.5","value":69.5,"perGameValue":69.229},
+   {"name":"netPassingYards","displayName":"Net Passing Yards","displayValue":"3,683","value":3683,"perGameValue":216.647}]},
+ {"name":"rushing","stats":[{"name":"rushingYards","displayName":"Rushing Yards","displayValue":"2,714","value":2714,"perGameValue":159}]},
+ {"name":"defensive","stats":[{"name":"totalTackles","displayName":"Total Tackles","displayValue":"1171","value":1171,"perGameValue":58}]},
+ {"name":"defensiveInterceptions","stats":[{"name":"interceptions","displayName":"Interceptions","displayValue":"13","value":13}]}
+]}}}
