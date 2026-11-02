@@ -1,0 +1,6 @@
+{"season":{"year":2026},"athletes":[
+ {"position":"offense","items":[{"id":"3918298","displayName":"Josh Allen","jersey":"17","position":{"abbreviation":"QB","displayName":"Quarterback"},
+   "headshot":{"href":"https://a.espncdn.com/i/headshots/nfl/players/full/3918298.png"},"age":30,"displayHeight":"6' 5\"","displayWeight":"237 lbs",
+   "experience":{"years":9},"college":{"name":"Wyoming","shortName":"Wyoming"},"injuries":[]}]},
+ {"position":"defense","items":[{"id":"1","displayName":"Some Linebacker","jersey":"50","position":{"abbreviation":"LB"},"injuries":[{"status":"Questionable"}]}]}
+]}

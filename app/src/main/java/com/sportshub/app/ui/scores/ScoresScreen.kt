@@ -51,6 +51,8 @@ import com.sportshub.app.ui.components.EmptyState
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.SectionHeader
 import com.sportshub.app.ui.components.SportMenuButton
+import com.sportshub.app.ui.components.Pill
+import com.sportshub.app.ui.components.bottomListPadding
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -107,7 +109,7 @@ fun ScoresScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .nestedScroll(scrollBehavior.nestedScrollConnection),
-                contentPadding = PaddingValues(bottom = 24.dp),
+                contentPadding = PaddingValues(bottom = bottomListPadding()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (sport.hasWeeks && board != null && board.seasonType == 2) {
@@ -192,18 +194,18 @@ private fun WeekSelector(weeks: Int, selected: Int?, current: Int?, onSelect: (I
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items((1..weeks).toList(), key = { it }) { week ->
-            FilterChip(
+            Pill(
+                label = "Week $week",
                 selected = week == selected,
                 onClick = { onSelect(week) },
-                label = { Text("Week $week") },
                 // A dot marks this week while browsing others.
-                leadingIcon = if (week == current && week != selected) {
+                leading = if (week == current && week != selected) {
                     {
                         Box(
                             Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
+                                .background(MaterialTheme.colorScheme.tertiary),
                         )
                     }
                 } else {

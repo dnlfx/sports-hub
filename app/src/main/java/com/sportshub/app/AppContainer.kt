@@ -7,10 +7,13 @@ import coil.memory.MemoryCache
 import com.sportshub.app.data.EspnScoresRepository
 import com.sportshub.app.data.ScoresRepository
 import com.sportshub.app.data.SourcesRepository
+import com.sportshub.app.data.TeamRepository
 import com.sportshub.app.data.espn.EspnClient
 import com.sportshub.app.data.scan.PageScanner
 import com.sportshub.app.model.Game
+import com.sportshub.app.model.PlayerRef
 import com.sportshub.app.model.Sport
+import com.sportshub.app.model.Team
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,7 +34,9 @@ class AppContainer(context: Context) {
         .retryOnConnectionFailure(true)
         .build()
 
-    val scoresRepository: ScoresRepository = EspnScoresRepository(appContext, EspnClient(http))
+    private val espn = EspnClient(http)
+    val scoresRepository: ScoresRepository = EspnScoresRepository(appContext, espn)
+    val teamRepository = TeamRepository(appContext, espn)
     val sourcesRepository = SourcesRepository(appContext)
     val pageScanner = PageScanner(http)
 
@@ -56,6 +61,12 @@ class AppContainer(context: Context) {
 
     /** The game the user just tapped, so its detail screen can draw the header before loading. */
     var lastOpenedGame: Game? = null
+
+    /** The team the user just tapped, so its page can draw the header before loading. */
+    var lastOpenedTeam: Team? = null
+
+    /** The player the user just tapped, so their page can draw the header before loading. */
+    var lastOpenedPlayer: PlayerRef? = null
 
     private val _selectedSport = MutableStateFlow(Sport.default)
     val selectedSport: StateFlow<Sport> = _selectedSport.asStateFlow()
