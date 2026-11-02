@@ -108,16 +108,15 @@ internal fun StatTable(table: PlayerStatTable, onOpenPlayer: ((PlayerRef) -> Uni
         }
     }
     val byId = remember(table) { table.players.associateBy { it.athleteId } }
-    StatGrid(
-        columns = table.columns,
-        rows = rows,
-        showHeadshots = true,
-        onRowClick = onOpenPlayer?.let { open ->
-            { row: GridRow ->
-                byId[row.key]?.let { p -> open(PlayerRef(p.athleteId, p.name, p.headshotUrl, jersey = p.jersey)) }
-            }
-        },
-    )
+    val onRowClick: ((GridRow) -> Unit)? = if (onOpenPlayer == null) {
+        null
+    } else {
+        { row ->
+            val p = byId[row.key]
+            if (p != null) onOpenPlayer(PlayerRef(p.athleteId, p.name, p.headshotUrl, jersey = p.jersey))
+        }
+    }
+    StatGrid(columns = table.columns, rows = rows, showHeadshots = true, onRowClick = onRowClick)
 }
 
 /** A row of a [StatGrid]: a name (or season) on the left and its numbers on the right. */

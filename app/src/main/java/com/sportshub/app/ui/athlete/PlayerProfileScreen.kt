@@ -234,6 +234,7 @@ fun PlayerProfileScreen(
                 career == null && !state.careerFailed -> item(key = "career_skeleton") { SectionSkeleton("Career", rows = 5) }
                 career.isNullOrEmpty() -> Unit
                 else -> {
+                    val career = career.orEmpty()
                     val season = career.firstNotNullOfOrNull { it.seasons.firstOrNull()?.label }
                     val latest = career.filter { it.seasons.firstOrNull()?.label == season }
                     if (season != null && latest.isNotEmpty()) {

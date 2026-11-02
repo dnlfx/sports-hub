@@ -29,6 +29,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -79,10 +80,10 @@ class TeamRepository(context: Context, private val client: EspnClient) {
     fun <T> peek(sport: Sport, part: TeamPart, teamId: String): T? = peek(key(sport, part.id, teamId))
 
     suspend fun <T> cached(sport: Sport, part: TeamPart, teamId: String): T? =
-        cached(key(sport, part.id, teamId)) { body -> parse(sport, part, teamId, body) }
+        cached<T>(key(sport, part.id, teamId)) { body -> parse<T>(sport, part, teamId, body) }
 
     suspend fun <T> load(sport: Sport, part: TeamPart, teamId: String): Result<T> =
-        fetch(key(sport, part.id, teamId), { download(sport, part, teamId) }) { body -> parse(sport, part, teamId, body) }
+        fetch<T>(key(sport, part.id, teamId), { download(sport, part, teamId) }) { body -> parse<T>(sport, part, teamId, body) }
 
     private suspend fun download(sport: Sport, part: TeamPart, teamId: String): String = when (part) {
         TeamPart.Profile -> client.team(sport, teamId)
@@ -98,7 +99,7 @@ class TeamRepository(context: Context, private val client: EspnClient) {
             }
             val first = EspnJson.parseToJsonElement(regular.await()) as? JsonObject
             val merged = JsonObject(
-                buildMap {
+                buildMap<String, JsonElement> {
                     first?.get("season")?.let { put("season", it) }
                     first?.get("requestedSeason")?.let { put("requestedSeason", it) }
                     put("events", JsonArray(events.distinctBy { (it as? JsonObject)?.get("id").toString() }))
@@ -175,7 +176,7 @@ class TeamRepository(context: Context, private val client: EspnClient) {
                 withContext(Dispatchers.IO) {
                     runCatching {
                         val root = EspnJson.parseToJsonElement(full) as? JsonObject
-                        val slim = JsonObject(buildMap { root?.get("boxscore")?.let { put("boxscore", it) } })
+                        val slim = JsonObject(buildMap<String, JsonElement> { root?.get("boxscore")?.let { put("boxscore", it) } })
                         file.writeText(slim.toString())
                     }
                 }
