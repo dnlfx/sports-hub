@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 /** Everything on a team page. A null part hasn't loaded yet; its name in [failed] means it couldn't. */
 data class TeamUiState(
     val team: Team?,
+    val sport: Sport = Sport.default,
     val profile: TeamProfile? = null,
     val schedule: TeamSchedule? = null,
     val teamStats: TeamSeasonStats? = null,
@@ -58,6 +59,7 @@ class TeamViewModel(
         repository.peekSchedule(sport, teamId).let { schedule ->
             TeamUiState(
                 team = initialTeam ?: repository.teamInfo(sport, teamId),
+                sport = sport,
                 profile = repository.peekProfile(sport, teamId),
                 schedule = schedule,
                 teamStats = repository.peekTeamStats(sport, teamId),

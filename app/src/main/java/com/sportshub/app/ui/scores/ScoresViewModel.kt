@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 data class ScoresUiState(
     val sport: Sport = Sport.default,
@@ -25,6 +26,11 @@ data class ScoresUiState(
     val selectedWeek: Int? = null,
     /** This week's number, so the week strip can mark it while browsing other weeks. */
     val currentWeek: Int? = null,
+    /** Day the user picked, in sports played by day; null means today's slate. */
+    val selectedDate: LocalDate? = null,
+    /** Today's slate date and the season's game days, for the day strip. Kept while browsing other days. */
+    val currentDate: LocalDate? = null,
+    val calendar: List<LocalDate> = emptyList(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val error: String? = null,
@@ -56,7 +62,15 @@ class ScoresViewModel(
     /** Scores already in memory, shown on the first frame instead of a loading placeholder. */
     private fun startState(sport: Sport): ScoresUiState =
         repository.peekScoreboard(sport)?.let { board ->
-            ScoresUiState(sport = sport, board = board, sections = sectionsFor(board, sport), currentWeek = board.week, isLoading = false)
+            ScoresUiState(
+                sport = sport,
+                board = board,
+                sections = sectionsFor(board, sport),
+                currentWeek = board.week,
+                currentDate = board.date,
+                calendar = board.calendar,
+                isLoading = false,
+            )
         } ?: ScoresUiState(sport = sport)
 
     fun setSport(sport: Sport) {
@@ -71,7 +85,14 @@ class ScoresViewModel(
             // Show the last saved scores straight away, then refresh in place.
             repository.cachedScoreboard(sport)?.let { cached ->
                 _state.update {
-                    it.copy(board = cached, sections = sectionsFor(cached, sport), currentWeek = cached.week, isLoading = false)
+                    it.copy(
+                        board = cached,
+                        sections = sectionsFor(cached, sport),
+                        currentWeek = cached.week,
+                        currentDate = cached.date,
+                        calendar = cached.calendar,
+                        isLoading = false,
+                    )
                 }
             }
             fetch(showSpinner = false)
@@ -82,6 +103,16 @@ class ScoresViewModel(
         val board = _state.value.board
         val target = if (board != null && board.week == week && _state.value.selectedWeek == null) null else week
         _state.update { it.copy(selectedWeek = target, isLoading = true, error = null) }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { fetch(showSpinner = false) }
+    }
+
+    /** Shows [date]'s games. Picking today's slate again goes back to following the current day. */
+    fun selectDate(date: LocalDate) {
+        val s = _state.value
+        val target = if (date == s.currentDate) null else date
+        if (target == s.selectedDate && s.board != null) return
+        _state.update { it.copy(selectedDate = target, isLoading = true, error = null) }
         loadJob?.cancel()
         loadJob = viewModelScope.launch { fetch(showSpinner = false) }
     }
@@ -109,19 +140,26 @@ class ScoresViewModel(
     private suspend fun fetch(showSpinner: Boolean) {
         val current = _state.value
         if (showSpinner) _state.update { it.copy(isRefreshing = true) }
-        val request = current.selectedWeek?.let { week ->
-            SlateRequest(season = current.board?.season, seasonType = current.board?.seasonType, week = week)
-        } ?: SlateRequest()
+        val request = current.selectedDate?.let { SlateRequest(date = it) }
+            ?: current.selectedWeek?.let { week ->
+                SlateRequest(season = current.board?.season, seasonType = current.board?.seasonType, week = week)
+            }
+            ?: SlateRequest()
         val result = repository.scoreboard(current.sport, request)
         lastFetchAtMs = System.currentTimeMillis()
         _state.update { s ->
-            if (s.sport != current.sport || s.selectedWeek != current.selectedWeek) return@update s
+            if (s.sport != current.sport || s.selectedWeek != current.selectedWeek || s.selectedDate != current.selectedDate) {
+                return@update s
+            }
             result.fold(
                 onSuccess = { board ->
                     s.copy(
                         board = board,
                         sections = sectionsFor(board, s.sport),
                         currentWeek = if (request.isCurrent) board.week else s.currentWeek,
+                        currentDate = if (request.isCurrent) board.date else s.currentDate,
+                        // Any day's slate carries the season's calendar; keep the longest one seen.
+                        calendar = board.calendar.takeIf { it.size >= s.calendar.size } ?: s.calendar,
                         isLoading = false,
                         isRefreshing = false,
                         error = null,

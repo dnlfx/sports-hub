@@ -80,10 +80,20 @@ class AppContainer(context: Context) {
     var lastCompareTeam: Team? = null
     var lastComparePlayer: PlayerRef? = null
 
-    private val _selectedSport = MutableStateFlow(Sport.default)
+    /** The sport picked in the top bar, remembered across launches. */
+    private val settings = appContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    private val _selectedSport = MutableStateFlow(
+        Sport.fromId(settings.getString(KEY_SPORT, null)).takeIf { it.isAvailable } ?: Sport.default,
+    )
     val selectedSport: StateFlow<Sport> = _selectedSport.asStateFlow()
 
     fun selectSport(sport: Sport) {
-        if (sport.isAvailable) _selectedSport.value = sport
+        if (!sport.isAvailable || sport == _selectedSport.value) return
+        _selectedSport.value = sport
+        settings.edit().putString(KEY_SPORT, sport.id).apply()
+    }
+
+    private companion object {
+        const val KEY_SPORT = "sport"
     }
 }

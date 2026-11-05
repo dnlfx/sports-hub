@@ -43,14 +43,15 @@ import com.sportshub.app.ui.components.cardSurface
 import com.sportshub.app.ui.scores.statusLabel
 import com.sportshub.app.ui.theme.SportsHubTheme
 
-/** How a followed team's week looks, for its tile on the Scores tab. */
+/** How a followed team's week (or day, in the NBA) looks, for its tile on the Scores tab. */
 @Immutable
 data class TeamWeek(val team: Team, val record: String?, val status: String, val tone: WeekTone)
 
 enum class WeekTone { Live, Won, Lost, Upcoming, Idle }
 
 /**
- * Each followed team's game on [board]: live score, result, kickoff time, or a bye.
+ * Each followed team's game on [board]: live score, result, start time, or a bye
+ * (no game that day, in sports played by day).
  * Teams keep the order the user followed them in.
  */
 fun teamWeeks(favorites: List<Team>, board: Scoreboard): List<TeamWeek> = favorites.map { team ->
@@ -64,7 +65,16 @@ fun teamWeeks(favorites: List<Team>, board: Scoreboard): List<TeamWeek> = favori
     )
     when {
         game == null || side == null || other == null ->
-            TeamWeek(shown, null, if (board.seasonType == 3) "Not playing" else "Bye week", WeekTone.Idle)
+            TeamWeek(
+                shown,
+                null,
+                when {
+                    board.seasonType == 3 -> "Not playing"
+                    board.sport.hasWeeks -> "Bye week"
+                    else -> "No game"
+                },
+                WeekTone.Idle,
+            )
         game.status is GameStatus.Live ->
             TeamWeek(shown, known?.record, "Live ${side.score ?: 0}–${other.score ?: 0}", WeekTone.Live)
         game.status is GameStatus.Final -> {
@@ -156,7 +166,7 @@ private fun TeamWeekTile(week: TeamWeek, onClick: () -> Unit) {
 
 /** Card inviting the user to follow teams, at the top of Scores until they do or close it. */
 @Composable
-fun FollowPrompt(onChoose: () -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+fun FollowPrompt(onChoose: () -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier, byWeek: Boolean = true) {
     val accent = MaterialTheme.colorScheme.primary
     Row(
         modifier
@@ -180,7 +190,7 @@ fun FollowPrompt(onChoose: () -> Unit, onDismiss: () -> Unit, modifier: Modifier
             Text("Follow your teams", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(2.dp))
             Text(
-                "Their games show up first here, every week.",
+                if (byWeek) "Their games show up first here, every week." else "Their games show up first here, every game day.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

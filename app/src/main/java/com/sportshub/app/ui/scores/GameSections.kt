@@ -97,5 +97,15 @@ fun mergeGame(latest: Game?, fromList: Game?): Game? {
     return if (merged == latest) latest else merged
 }
 
+/**
+ * The days on the strip: every game day of the season when ESPN lists them, else two
+ * weeks either side of today. The day showing and today's slate are always on it.
+ */
+fun stripDays(calendar: List<LocalDate>, current: LocalDate?, selected: LocalDate?): List<LocalDate> {
+    val anchor = selected ?: current ?: LocalDate.now()
+    val base = calendar.ifEmpty { (-14L..14L).map { (current ?: anchor).plusDays(it) } }
+    return (base + listOfNotNull(current, selected)).distinct().sorted()
+}
+
 /** [new] if it differs from [old], else [old] itself, so unchanged data keeps its identity. */
 fun <T> keepIfEqual(old: T?, new: T): T = if (old != null && old == new) old else new

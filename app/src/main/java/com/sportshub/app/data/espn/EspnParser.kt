@@ -19,6 +19,7 @@ import com.sportshub.app.model.WinProbability
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import java.time.Instant
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
@@ -42,8 +43,23 @@ object EspnParser {
             week = root?.obj("week")?.int("number"),
             games = games,
             fetchedAtEpochMs = fetchedAtEpochMs,
+            date = root?.obj("day")?.str("date")?.let(::localDate),
+            calendar = if (sport.hasWeeks) emptyList() else calendarDays(root),
         )
     }
+
+    /**
+     * The days of the season with games, for sports played by day. ESPN lists them as
+     * times like "2025-10-21T07:00Z", where the date part is the US game day.
+     */
+    private fun calendarDays(root: JsonObject?): List<LocalDate> =
+        root?.arr("leagues")?.firstOrNull()?.obj?.arr("calendar").orEmpty()
+            .mapNotNull { it.primitiveString()?.let(::localDate) }
+            .distinct()
+            .sorted()
+
+    /** "2025-10-21" or "2025-10-21T07:00Z" as a date. */
+    internal fun localDate(raw: String): LocalDate? = runCatching { LocalDate.parse(raw.trim().take(10)) }.getOrNull()
 
     fun parseSummary(sport: Sport, body: String): GameDetail {
         val root = json.parseToJsonElement(body).obj
@@ -54,7 +70,7 @@ object EspnParser {
             g.copy(
                 venue = g.venue ?: root?.obj("gameInfo")?.obj("venue")?.str("fullName"),
                 broadcasts = g.broadcasts.ifEmpty { broadcastNames(root?.arr("broadcasts")) },
-                situation = if (g.status is GameStatus.Live) summarySituation(root, g.situation) else null,
+                situation = if (g.status is GameStatus.Live) summarySituation(root, g.situation, sport) else null,
             )
         }
 
@@ -66,8 +82,10 @@ object EspnParser {
         val rows = homeStats?.arr("statistics").orEmpty().mapNotNull { stat ->
             val o = stat.obj ?: return@mapNotNull null
             val name = o.str("name") ?: return@mapNotNull null
+            if (sport.isBasketball && name in basketballSkippedStats) return@mapNotNull null
+            val label = o.str("label") ?: name
             TeamStatRow(
-                label = o.str("label") ?: name,
+                label = if (sport.isBasketball) basketballStatLabels[label] ?: label else label,
                 away = awayMap[name] ?: "-",
                 home = o.str("displayValue") ?: "-",
             )
@@ -78,14 +96,14 @@ object EspnParser {
             teamBlock.obj?.arr("leaders").orEmpty().mapNotNull { parseLeaderCategory(it.obj, teamId) }
         }
 
-        val playerStats = root?.obj("boxscore")?.arr("players").orEmpty().mapNotNull { parseTeamPlayers(it.obj) }
+        val playerStats = root?.obj("boxscore")?.arr("players").orEmpty().mapNotNull { parseTeamPlayers(sport, it.obj) }
 
         return GameDetail(
             game = game,
             teamStats = rows,
             leaders = leaders,
             playerStats = playerStats,
-            winProbability = parseWinProbability(root),
+            winProbability = parseWinProbability(root, sport),
         )
     }
 
@@ -94,9 +112,9 @@ object EspnParser {
      * each play), matched by play id to the plays in the drive log for their text, time and
      * score. Before kickoff there is no line, only the "predictor" pregame pick.
      */
-    internal fun parseWinProbability(root: JsonObject?): WinProbability? {
+    internal fun parseWinProbability(root: JsonObject?, sport: Sport = Sport.NFL): WinProbability? {
         root ?: return null
-        val plays = playsById(root)
+        val plays = playsById(root, sport)
         val points = root.arr("winprobability").orEmpty().mapNotNull { e ->
             val o = e.obj ?: return@mapNotNull null
             val pct = o.double("homeWinPercentage")?.toFloat()?.coerceIn(0f, 1f) ?: return@mapNotNull null
@@ -110,20 +128,20 @@ object EspnParser {
     }
 
     /** Every play in the summary by id: from the drive log, plus the scoring plays list for anything it misses. */
-    private fun playsById(root: JsonObject): Map<String, WinProbPoint> {
+    private fun playsById(root: JsonObject, sport: Sport): Map<String, WinProbPoint> {
         val out = LinkedHashMap<String, WinProbPoint>()
         val drives = root.obj("drives")
         val driveList = drives?.arr("previous").orEmpty().mapNotNull { it.obj } + listOfNotNull(drives?.obj("current"))
         driveList.forEach { drive ->
             val teamId = drive.obj("team")?.str("id")
-            drive.arr("plays").orEmpty().forEach { p -> parsePlay(p.obj, teamId)?.let { out.putIfAbsent(it.playId!!, it) } }
+            drive.arr("plays").orEmpty().forEach { p -> parsePlay(p.obj, teamId, sport)?.let { out.putIfAbsent(it.playId!!, it) } }
         }
         // Some sports list plays at the top level instead.
-        root.arr("plays").orEmpty().forEach { p -> parsePlay(p.obj, null)?.let { out.putIfAbsent(it.playId!!, it) } }
+        root.arr("plays").orEmpty().forEach { p -> parsePlay(p.obj, null, sport)?.let { out.putIfAbsent(it.playId!!, it) } }
         root.arr("scoringPlays").orEmpty().forEach { p ->
             val o = p.obj ?: return@forEach
             val id = o.str("id") ?: return@forEach
-            val scoring = parsePlay(o, o.obj("team")?.str("id"), isScoring = true) ?: return@forEach
+            val scoring = parsePlay(o, o.obj("team")?.str("id"), sport, isScoring = true) ?: return@forEach
             val known = out[id]
             out[id] = if (known == null) {
                 scoring
@@ -134,7 +152,7 @@ object EspnParser {
         return out
     }
 
-    private fun parsePlay(p: JsonObject?, teamId: String?, isScoring: Boolean = false): WinProbPoint? {
+    private fun parsePlay(p: JsonObject?, teamId: String?, sport: Sport, isScoring: Boolean = false): WinProbPoint? {
         p ?: return null
         val id = p.str("id") ?: return null
         val type = p.obj("type")?.str("text").orEmpty()
@@ -149,8 +167,26 @@ object EspnParser {
             homeScore = p.int("homeScore"),
             isScoring = scoring,
             teamId = p.obj("team")?.str("id") ?: p.obj("start")?.obj("team")?.str("id") ?: teamId,
-            kind = playKind(type, p.obj("scoringType")?.str("abbreviation"), scoring),
+            kind = if (sport.isBasketball) {
+                basketballPlayKind(type, p.str("text").orEmpty(), p.int("scoreValue"), scoring)
+            } else {
+                playKind(type, p.obj("scoringType")?.str("abbreviation"), scoring)
+            },
         )
+    }
+
+    /** Sorts a basketball play by its type and points, e.g. "Driving Dunk Shot" or "Bad Pass Turnover". */
+    internal fun basketballPlayKind(type: String, text: String, scoreValue: Int?, scoring: Boolean): PlayKind {
+        val t = type.lowercase()
+        val desc = text.lowercase()
+        return when {
+            scoring && (scoreValue == 3 || desc.contains("three point") || desc.contains("3-pt")) -> PlayKind.ThreePointer
+            scoring && (t.contains("free throw") || scoreValue == 1) -> PlayKind.FreeThrow
+            scoring && (t.contains("dunk") || desc.contains("dunk")) -> PlayKind.Dunk
+            scoring -> PlayKind.Basket
+            t.contains("turnover") || desc.contains("turnover") || desc.contains("steal") -> PlayKind.Turnover
+            else -> PlayKind.Other
+        }
     }
 
     /** Sorts a play by ESPN's play type, e.g. "Passing Touchdown" or "Pass Interception Return". */
@@ -171,9 +207,11 @@ object EspnParser {
      * summary's own "situation" block, with the last play taken from the drive log
      * when neither names it.
      */
-    private fun summarySituation(root: JsonObject?, fromHeader: Situation?): Situation? {
+    private fun summarySituation(root: JsonObject?, fromHeader: Situation?, sport: Sport): Situation? {
         val base = fromHeader ?: root?.obj("situation")?.let(::parseSituation)
         val lastPlay = base?.lastPlay ?: lastPlayFromDrives(root?.obj("drives"))
+            // Basketball has no drives: its plays are one list, newest last.
+            ?: root?.arr("plays")?.lastOrNull()?.obj?.str("text")?.takeIf { sport.isBasketball && it.isNotBlank() }
         return when {
             base != null -> base.copy(lastPlay = lastPlay)
             lastPlay != null -> Situation(downDistance = null, possessionTeamId = null, isRedZone = false, lastPlay = lastPlay)
@@ -195,6 +233,19 @@ object EspnParser {
         lastPlay = s.obj("lastPlay")?.str("text"),
     )
 
+    /** Basketball team stats ESPN labels with box score shorthand, spelled out. */
+    private val basketballStatLabels = mapOf(
+        "FG" to "Field goals",
+        "3PT" to "3-pointers",
+        "FT" to "Free throws",
+        "Field Goal %" to "Field goal %",
+        "Three Point %" to "3-point %",
+        "Free Throw %" to "Free throw %",
+    )
+
+    /** Basketball team stats that repeat another row. */
+    private val basketballSkippedStats = setOf("teamTurnovers", "totalTechnicalFouls")
+
     /** Box score tables in the order a fan reads them; anything ESPN adds later goes at the end. */
     private val tableOrder = listOf(
         "passing", "rushing", "receiving", "defensive", "interceptions", "fumbles",
@@ -213,17 +264,26 @@ object EspnParser {
         "puntReturns" to "Punt returns",
     )
 
-    private fun parseTeamPlayers(block: JsonObject?): TeamPlayerStats? {
+    private fun parseTeamPlayers(sport: Sport, block: JsonObject?): TeamPlayerStats? {
         val teamId = block?.obj("team")?.str("id") ?: return null
-        val tables = block.arr("statistics").orEmpty().mapNotNull { parseStatTable(it.obj) }
-            .sortedBy { t -> tableOrder.indexOf(t.key).let { if (it < 0) Int.MAX_VALUE else it } }
+        val raw = block.arr("statistics").orEmpty()
+        val tables = if (sport.isBasketball) {
+            // One table for the whole team, every player who played, starters first.
+            listOfNotNull(raw.firstNotNullOfOrNull { parseStatTable(it.obj, keyFallback = BASKETBALL_TABLE) }?.copy(key = BASKETBALL_TABLE))
+        } else {
+            raw.mapNotNull { parseStatTable(it.obj) }
+                .sortedBy { t -> tableOrder.indexOf(t.key).let { if (it < 0) Int.MAX_VALUE else it } }
+        }
         return TeamPlayerStats(teamId, tables).takeIf { tables.isNotEmpty() }
     }
 
-    private fun parseStatTable(stat: JsonObject?): PlayerStatTable? {
+    /** Key of the single raw box score table a basketball team has. */
+    const val BASKETBALL_TABLE = "players"
+
+    private fun parseStatTable(stat: JsonObject?, keyFallback: String? = null): PlayerStatTable? {
         stat ?: return null
-        val key = stat.str("name") ?: return null
-        val columns = stat.arr("labels").orEmpty().mapNotNull { it.primitiveString() }
+        val key = stat.str("name") ?: keyFallback ?: return null
+        val columns = (stat.arr("labels") ?: stat.arr("names")).orEmpty().mapNotNull { it.primitiveString() }
         if (columns.isEmpty()) return null
         val players = stat.arr("athletes").orEmpty().mapNotNull { entry ->
             val o = entry.obj ?: return@mapNotNull null
@@ -237,6 +297,7 @@ object EspnParser {
                 headshotUrl = headshot(athlete),
                 jersey = athlete.str("jersey"),
                 values = List(columns.size) { values.getOrNull(it) ?: "-" },
+                starter = o.bool("starter") ?: false,
             )
         }
         if (players.isEmpty()) return null

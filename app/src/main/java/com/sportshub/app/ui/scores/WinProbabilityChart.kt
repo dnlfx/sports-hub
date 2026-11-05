@@ -65,44 +65,6 @@ import kotlin.math.sqrt
 // The numbers behind the chart
 // ---------------------------------------------------------------------------
 
-/** How much play [i] moved the home team's chance, from -1 to 1. */
-internal fun swingAt(points: List<WinProbPoint>, i: Int): Float =
-    if (i <= 0 || i >= points.size) 0f else points[i].homeWinPct - points[i - 1].homeWinPct
-
-/**
- * The plays worth marking on the chart: the biggest swings, plus scores and turnovers
- * that moved the needle at all. At most [max], in game order.
- */
-internal fun keyPlays(points: List<WinProbPoint>, max: Int = 8): List<Int> =
-    (1 until points.size)
-        .filter { i ->
-            val swing = abs(swingAt(points, i))
-            swing >= 0.08f || (points[i].kind != PlayKind.Other && swing >= 0.03f)
-        }
-        .sortedByDescending { abs(swingAt(points, it)) }
-        .take(max)
-        .sorted()
-
-/** The first point of each period, as (period, index), for the quarter lines. */
-internal fun periodStarts(points: List<WinProbPoint>): List<Pair<Int, Int>> {
-    val out = mutableListOf<Pair<Int, Int>>()
-    var last: Int? = null
-    points.forEachIndexed { i, p ->
-        val period = p.period ?: return@forEachIndexed
-        if (last == null || period > last!!) {
-            out += period to i
-            last = period
-        }
-    }
-    return out
-}
-
-internal fun periodLabel(period: Int, short: String = "Q"): String = when {
-    period <= 4 -> "$short$period"
-    period == 5 -> "OT"
-    else -> "${period - 4}OT"
-}
-
 /** "+18%" style percentage points for a swing. */
 private fun swingText(swing: Float): String = "+${(abs(swing) * 100).roundToInt()}%"
 
@@ -168,7 +130,7 @@ internal fun WinProbabilitySection(wp: WinProbability, game: Game) {
                 append("Tap a marked play or drag across the chart.")
                 wp.pregameHomePct?.let { pre ->
                     val favorite = if (pre >= 0.5f) game.home.team.abbreviation to pre else game.away.team.abbreviation to 1f - pre
-                    append(" Before kickoff: ${favorite.first} ${pct(favorite.second)}.")
+                    append(" Before ${game.sport.startWord}: ${favorite.first} ${pct(favorite.second)}.")
                 }
             },
             style = MaterialTheme.typography.bodySmall,
@@ -288,7 +250,7 @@ private fun WinProbabilityChart(
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())),
         )
 
-        // A line at the start of each quarter, labelled underneath.
+        // A line at the start of each period, labelled underneath.
         periods.forEach { (period, i) ->
             val px = x(i)
             if (i > 0) drawLine(grid, Offset(px, top), Offset(px, bottom), 1.dp.toPx())
@@ -369,6 +331,10 @@ private fun PlayCard(
         PlayKind.Touchdown -> "TOUCHDOWN"
         PlayKind.FieldGoal -> "FIELD GOAL"
         PlayKind.Safety -> "SAFETY"
+        PlayKind.ThreePointer -> "3-POINTER"
+        PlayKind.Dunk -> "DUNK"
+        PlayKind.Basket -> "BASKET"
+        PlayKind.FreeThrow -> "FREE THROW"
         PlayKind.Turnover -> "TURNOVER"
         PlayKind.Other -> if (p.isScoring) "SCORE" else if (isKey) "BIG PLAY" else "PLAY"
     }
@@ -425,7 +391,7 @@ internal fun WinProbabilitySkeleton() {
     }
 }
 
-/** Before kickoff: ESPN's pick for each team, as a split bar. */
+/** Before the game: ESPN's pick for each team, as a split bar. */
 @Composable
 internal fun MatchupPredictor(homePct: Float, game: Game) {
     val (awayColor, homeColor) = chartColors(game)
@@ -442,7 +408,7 @@ internal fun MatchupPredictor(homePct: Float, game: Game) {
         }
         Spacer(Modifier.height(10.dp))
         Text(
-            "ESPN Analytics' chance to win, before kickoff.",
+            "ESPN Analytics' chance to win, before ${game.sport.startWord}.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

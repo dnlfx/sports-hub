@@ -5,16 +5,26 @@ import android.util.LruCache
 import com.sportshub.app.data.espn.EspnClient
 import com.sportshub.app.data.espn.EspnParser
 import com.sportshub.app.model.GameDetail
+import com.sportshub.app.model.PlayerStatTable
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Sport
 import java.io.File
+import java.time.LocalDate
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Which slate to load. A null week means "whatever is current". */
-data class SlateRequest(val season: Int? = null, val seasonType: Int? = null, val week: Int? = null) {
-    val isCurrent: Boolean get() = week == null
+/**
+ * Which slate to load: a [week] for sports played by week, a [date] for sports played by
+ * day. Neither means "whatever is current".
+ */
+data class SlateRequest(
+    val season: Int? = null,
+    val seasonType: Int? = null,
+    val week: Int? = null,
+    val date: LocalDate? = null,
+) {
+    val isCurrent: Boolean get() = week == null && date == null
 }
 
 /**
@@ -54,7 +64,7 @@ class EspnScoresRepository(
     }
 
     override suspend fun scoreboard(sport: Sport, request: SlateRequest): Result<Scoreboard> = resultOf {
-        val body = client.scoreboard(sport, request.season, request.seasonType, request.week)
+        val body = client.scoreboard(sport, request.season, request.seasonType, request.week, request.date)
         val board = withContext(Dispatchers.Default) { EspnParser.parseScoreboard(sport, body) }
         if (request.isCurrent) {
             memory[sport] = board
@@ -66,15 +76,18 @@ class EspnScoresRepository(
     override suspend fun gameDetail(sport: Sport, gameId: String): Result<GameDetail> = resultOf {
         val body = client.summary(sport, gameId)
         var detail = withContext(Dispatchers.Default) {
-            // Box score tables as shown: interceptions and fumbles folded in, punts and returns left out.
+            // Box score tables as shown. Football: interceptions and fumbles folded in, punts and
+            // returns left out. Basketball: starters and bench.
             EspnParser.parseSummary(sport, body).let { d ->
-                d.copy(playerStats = d.playerStats.map { it.copy(tables = BoxScore.fold(it.tables)) }.filter { it.tables.isNotEmpty() })
+                val shape: (List<PlayerStatTable>) -> List<PlayerStatTable> =
+                    if (sport.isBasketball) BasketballStats::forDisplay else BoxScore::fold
+                d.copy(playerStats = d.playerStats.map { it.copy(tables = shape(it.tables)) }.filter { it.tables.isNotEmpty() })
             }
         }
         val game = detail.game
         // The game summary doesn't always carry the live down & distance. The scoreboard
         // always does, so borrow it from there rather than let it blink out of the header.
-        if (game != null && game.isLive && game.situation?.downDistance == null) {
+        if (game != null && game.isLive && !sport.isBasketball && game.situation?.downDistance == null) {
             val fromBoard = scoreboard(sport).getOrNull()?.games?.firstOrNull { it.id == game.id }?.situation
             if (fromBoard != null) {
                 detail = detail.copy(

@@ -1,0 +1,628 @@
+{
+ "header": {
+  "id": "401800002",
+  "competitions": [
+   {
+    "id": "401800002",
+    "date": "2026-11-06T00:00Z",
+    "status": {
+     "displayClock": "0.0",
+     "period": 4,
+     "type": {
+      "state": "post",
+      "name": "STATUS_FINAL",
+      "shortDetail": "Final"
+     }
+    },
+    "competitors": [
+     {
+      "homeAway": "home",
+      "score": "112",
+      "winner": true,
+      "linescores": [
+       {
+        "displayValue": "28"
+       },
+       {
+        "displayValue": "30"
+       },
+       {
+        "displayValue": "20"
+       },
+       {
+        "displayValue": "34"
+       }
+      ],
+      "team": {
+       "id": "18",
+       "abbreviation": "NY",
+       "shortDisplayName": "Knicks",
+       "color": "1d428a"
+      },
+      "record": [
+       {
+        "type": "total",
+        "summary": "5-1"
+       }
+      ]
+     },
+     {
+      "homeAway": "away",
+      "score": "104",
+      "winner": false,
+      "linescores": [
+       {
+        "displayValue": "25"
+       },
+       {
+        "displayValue": "33"
+       },
+       {
+        "displayValue": "23"
+       },
+       {
+        "displayValue": "23"
+       }
+      ],
+      "team": {
+       "id": "17",
+       "abbreviation": "BKN",
+       "shortDisplayName": "Nets",
+       "color": "000000"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "boxscore": {
+  "teams": [
+   {
+    "team": {
+     "id": "17"
+    },
+    "statistics": [
+     {
+      "name": "fieldGoalsMade-fieldGoalsAttempted",
+      "displayValue": "40-88",
+      "label": "FG"
+     },
+     {
+      "name": "fieldGoalPct",
+      "displayValue": "45.5",
+      "label": "Field Goal %"
+     },
+     {
+      "name": "totalRebounds",
+      "displayValue": "44",
+      "label": "Rebounds"
+     }
+    ]
+   },
+   {
+    "team": {
+     "id": "18"
+    },
+    "statistics": [
+     {
+      "name": "fieldGoalsMade-fieldGoalsAttempted",
+      "displayValue": "42-85",
+      "label": "FG"
+     },
+     {
+      "name": "fieldGoalPct",
+      "displayValue": "49.4",
+      "label": "Field Goal %"
+     },
+     {
+      "name": "totalRebounds",
+      "displayValue": "44",
+      "label": "Rebounds"
+     }
+    ]
+   }
+  ],
+  "players": [
+   {
+    "team": {
+     "id": "17",
+     "abbreviation": "BKN",
+     "shortDisplayName": "BKN"
+    },
+    "statistics": [
+     {
+      "names": [
+       "MIN",
+       "FG",
+       "3PT",
+       "FT",
+       "OREB",
+       "DREB",
+       "REB",
+       "AST",
+       "STL",
+       "BLK",
+       "TO",
+       "PF",
+       "+/-",
+       "PTS"
+      ],
+      "keys": [
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes"
+      ],
+      "labels": [
+       "MIN",
+       "FG",
+       "3PT",
+       "FT",
+       "OREB",
+       "DREB",
+       "REB",
+       "AST",
+       "STL",
+       "BLK",
+       "TO",
+       "PF",
+       "+/-",
+       "PTS"
+      ],
+      "athletes": [
+       {
+        "active": true,
+        "athlete": {
+         "id": "11",
+         "displayName": "Echo Eleven",
+         "shortName": "E. Eleven",
+         "jersey": "11",
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nba/players/full/11.png"
+         },
+         "position": {
+          "abbreviation": "G"
+         }
+        },
+        "starter": true,
+        "didNotPlay": false,
+        "reason": "",
+        "stats": [
+         "38",
+         "12-22",
+         "5-10",
+         "3-4",
+         "0",
+         "5",
+         "5",
+         "9",
+         "1",
+         "1",
+         "4",
+         "3",
+         "-8",
+         "32"
+        ]
+       },
+       {
+        "active": true,
+        "athlete": {
+         "id": "12",
+         "displayName": "Foxtrot Twelve",
+         "shortName": "F. Twelve",
+         "jersey": "12",
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nba/players/full/12.png"
+         },
+         "position": {
+          "abbreviation": "G"
+         }
+        },
+        "starter": false,
+        "didNotPlay": false,
+        "reason": "",
+        "stats": [
+         "20",
+         "2-6",
+         "1-4",
+         "1-2",
+         "1",
+         "3",
+         "4",
+         "0",
+         "0",
+         "0",
+         "2",
+         "2",
+         "-3",
+         "6"
+        ]
+       }
+      ],
+      "totals": []
+     }
+    ]
+   },
+   {
+    "team": {
+     "id": "18",
+     "abbreviation": "NY",
+     "shortDisplayName": "NY"
+    },
+    "statistics": [
+     {
+      "names": [
+       "MIN",
+       "FG",
+       "3PT",
+       "FT",
+       "OREB",
+       "DREB",
+       "REB",
+       "AST",
+       "STL",
+       "BLK",
+       "TO",
+       "PF",
+       "+/-",
+       "PTS"
+      ],
+      "keys": [
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes",
+       "minutes"
+      ],
+      "labels": [
+       "MIN",
+       "FG",
+       "3PT",
+       "FT",
+       "OREB",
+       "DREB",
+       "REB",
+       "AST",
+       "STL",
+       "BLK",
+       "TO",
+       "PF",
+       "+/-",
+       "PTS"
+      ],
+      "athletes": [
+       {
+        "active": true,
+        "athlete": {
+         "id": "1",
+         "displayName": "Alpha One",
+         "shortName": "A. One",
+         "jersey": "1",
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nba/players/full/1.png"
+         },
+         "position": {
+          "abbreviation": "G"
+         }
+        },
+        "starter": true,
+        "didNotPlay": false,
+        "reason": "",
+        "stats": [
+         "36",
+         "10-20",
+         "3-7",
+         "4-4",
+         "1",
+         "7",
+         "8",
+         "5",
+         "2",
+         "0",
+         "3",
+         "2",
+         "+8",
+         "27"
+        ]
+       },
+       {
+        "active": true,
+        "athlete": {
+         "id": "2",
+         "displayName": "Bravo Two",
+         "shortName": "B. Two",
+         "jersey": "2",
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nba/players/full/2.png"
+         },
+         "position": {
+          "abbreviation": "G"
+         }
+        },
+        "starter": true,
+        "didNotPlay": false,
+        "reason": "",
+        "stats": [
+         "30",
+         "4-9",
+         "0-1",
+         "2-3",
+         "3",
+         "6",
+         "9",
+         "1",
+         "0",
+         "2",
+         "1",
+         "4",
+         "+2",
+         "10"
+        ]
+       },
+       {
+        "active": true,
+        "athlete": {
+         "id": "3",
+         "displayName": "Charlie Three",
+         "shortName": "C. Three",
+         "jersey": "3",
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nba/players/full/3.png"
+         },
+         "position": {
+          "abbreviation": "G"
+         }
+        },
+        "starter": false,
+        "didNotPlay": false,
+        "reason": "",
+        "stats": [
+         "18",
+         "3-5",
+         "2-3",
+         "0-0",
+         "0",
+         "2",
+         "2",
+         "3",
+         "1",
+         "0",
+         "0",
+         "1",
+         "-4",
+         "8"
+        ]
+       },
+       {
+        "active": true,
+        "athlete": {
+         "id": "4",
+         "displayName": "Delta Four",
+         "shortName": "D. Four",
+         "jersey": "4",
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nba/players/full/4.png"
+         },
+         "position": {
+          "abbreviation": "G"
+         }
+        },
+        "starter": false,
+        "didNotPlay": true,
+        "reason": "COACH'S DECISION",
+        "stats": []
+       }
+      ],
+      "totals": []
+     }
+    ]
+   }
+  ]
+ },
+ "leaders": [
+  {
+   "team": {
+    "id": "18"
+   },
+   "leaders": [
+    {
+     "name": "points",
+     "displayName": "Points",
+     "leaders": [
+      {
+       "displayValue": "27 PTS",
+       "athlete": {
+        "id": "1",
+        "shortName": "A. One"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "plays": [
+  {
+   "id": "p1",
+   "type": {
+    "text": "Jumpball"
+   },
+   "text": "Jump ball",
+   "awayScore": 0,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "displayValue": "12:00"
+   },
+   "scoringPlay": false,
+   "team": {
+    "id": "18"
+   }
+  },
+  {
+   "id": "p2",
+   "type": {
+    "text": "Pullup Jump Shot"
+   },
+   "text": "Echo Eleven makes 27-foot three point pullup jump shot",
+   "awayScore": 3,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "displayValue": "11:40"
+   },
+   "scoringPlay": true,
+   "scoreValue": 3,
+   "team": {
+    "id": "17"
+   }
+  },
+  {
+   "id": "p3",
+   "type": {
+    "text": "Bad Pass\nTurnover"
+   },
+   "text": "Bravo Two bad pass (Echo Eleven steals)",
+   "awayScore": 3,
+   "homeScore": 0,
+   "period": {
+    "number": 1
+   },
+   "clock": {
+    "displayValue": "11:20"
+   },
+   "scoringPlay": false,
+   "team": {
+    "id": "18"
+   }
+  },
+  {
+   "id": "p4",
+   "type": {
+    "text": "Running Dunk Shot"
+   },
+   "text": "Alpha One makes running dunk",
+   "awayScore": 3,
+   "homeScore": 2,
+   "period": {
+    "number": 2
+   },
+   "clock": {
+    "displayValue": "10:02"
+   },
+   "scoringPlay": true,
+   "scoreValue": 2,
+   "team": {
+    "id": "18"
+   }
+  },
+  {
+   "id": "p5",
+   "type": {
+    "text": "Free Throw - 1 of 2"
+   },
+   "text": "Alpha One makes free throw 1 of 2",
+   "awayScore": 3,
+   "homeScore": 3,
+   "period": {
+    "number": 4
+   },
+   "clock": {
+    "displayValue": "0:40"
+   },
+   "scoringPlay": true,
+   "scoreValue": 1,
+   "team": {
+    "id": "18"
+   }
+  },
+  {
+   "id": "p6",
+   "type": {
+    "text": "Driving Layup Shot"
+   },
+   "text": "Alpha One makes driving layup",
+   "awayScore": 3,
+   "homeScore": 5,
+   "period": {
+    "number": 5
+   },
+   "clock": {
+    "displayValue": "2:10"
+   },
+   "scoringPlay": true,
+   "scoreValue": 2,
+   "team": {
+    "id": "18"
+   }
+  }
+ ],
+ "winprobability": [
+  {
+   "playId": "p1",
+   "homeWinPercentage": 0.55,
+   "tiePercentage": 0.0
+  },
+  {
+   "playId": "p2",
+   "homeWinPercentage": 0.5,
+   "tiePercentage": 0.0
+  },
+  {
+   "playId": "p3",
+   "homeWinPercentage": 0.44,
+   "tiePercentage": 0.0
+  },
+  {
+   "playId": "p4",
+   "homeWinPercentage": 0.48,
+   "tiePercentage": 0.0
+  },
+  {
+   "playId": "p5",
+   "homeWinPercentage": 0.6,
+   "tiePercentage": 0.0
+  },
+  {
+   "playId": "p6",
+   "homeWinPercentage": 0.95,
+   "tiePercentage": 0.0
+  }
+ ],
+ "predictor": {
+  "homeTeam": {
+   "gameProjection": "61.2"
+  },
+  "awayTeam": {
+   "gameProjection": "38.8"
+  }
+ },
+ "gameInfo": {
+  "venue": {
+   "fullName": "Madison Square Garden"
+  }
+ }
+}

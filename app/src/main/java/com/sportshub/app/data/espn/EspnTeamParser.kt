@@ -78,9 +78,19 @@ object EspnTeamParser {
         return TeamSchedule(season, entries)
     }
 
-    private data class Pick(val category: String, val stat: String, val label: String)
+    /**
+     * One stat to show. [category] null means look in every category, since ESPN files
+     * basketball stats differently from one season to the next. [alternatives] are other
+     * names ESPN has used for the same stat.
+     */
+    private data class Pick(
+        val category: String?,
+        val stat: String,
+        val label: String,
+        val alternatives: List<String> = emptyList(),
+    )
 
-    private val groupSpecs: List<Triple<String, String, List<Pick>>> = listOf(
+    private val nflGroupSpecs: List<Triple<String, String, List<Pick>>> = listOf(
         Triple(
             "offense", "Offense",
             listOf(
@@ -141,15 +151,60 @@ object EspnTeamParser {
         ),
     )
 
+    private val nbaGroupSpecs: List<Triple<String, String, List<Pick>>> = listOf(
+        Triple(
+            "scoring", "Scoring",
+            listOf(
+                Pick(null, "points", "Points"),
+                Pick(null, "fieldGoalPct", "Field goal %"),
+                Pick(null, "threePointFieldGoalPct", "3-point %", listOf("threePointPct")),
+                Pick(null, "freeThrowPct", "Free throw %"),
+                Pick(null, "fieldGoalsMade", "Field goals made"),
+                Pick(null, "threePointFieldGoalsMade", "3-pointers made", listOf("threePointFieldGoals")),
+                Pick(null, "freeThrowsMade", "Free throws made"),
+                Pick(null, "scoringEfficiency", "Points per shot", listOf("shootingEfficiency")),
+            ),
+        ),
+        Triple(
+            "playmaking", "Ball movement",
+            listOf(
+                Pick(null, "assists", "Assists"),
+                Pick(null, "turnovers", "Turnovers", listOf("totalTurnovers")),
+                Pick(null, "assistTurnoverRatio", "Assist to turnover ratio"),
+            ),
+        ),
+        Triple(
+            "rebounding", "Rebounding",
+            listOf(
+                Pick(null, "rebounds", "Rebounds", listOf("totalRebounds")),
+                Pick(null, "offensiveRebounds", "Offensive rebounds"),
+                Pick(null, "defensiveRebounds", "Defensive rebounds"),
+            ),
+        ),
+        Triple(
+            "defense", "Defense",
+            listOf(
+                Pick(null, "steals", "Steals"),
+                Pick(null, "blocks", "Blocks"),
+                Pick(null, "fouls", "Fouls", listOf("personalFouls")),
+            ),
+        ),
+    )
+
+    private fun groupSpecs(sport: Sport) = if (sport.isBasketball) nbaGroupSpecs else nflGroupSpecs
+
     /** Each group's main ESPN category, used when none of the picked stats are found. */
     private val fallbackCategory = mapOf(
         "offense" to "passing",
         "efficiency" to "miscellaneous",
         "defense" to "defensive",
         "kicking" to "kicking",
+        "scoring" to "offensive",
+        "playmaking" to "offensive",
+        "rebounding" to "general",
     )
 
-    fun parseTeamStatistics(body: String): TeamSeasonStats {
+    fun parseTeamStatistics(body: String, sport: Sport = Sport.NFL): TeamSeasonStats {
         val root = EspnJson.parseToJsonElement(body).obj
         val results = root?.obj("results") ?: root
         val categories = (results?.obj("stats")?.arr("categories") ?: results?.arr("categories")).orEmpty()
@@ -161,8 +216,21 @@ object EspnTeamParser {
             name to stats
         }.toMap()
 
-        val groups = groupSpecs.mapNotNull { (key, title, picks) ->
-            var stats = picks.mapNotNull { p -> byCategory[p.category]?.get(p.stat)?.let { seasonStat(p.stat, p.label, it) } }
+        // Any category's stat by name, for picks that don't name one.
+        val anywhere = LinkedHashMap<String, JsonObject>()
+        byCategory.values.forEach { stats -> stats.forEach { (name, stat) -> anywhere.putIfAbsent(name, stat) } }
+        fun find(p: Pick): Pair<String, JsonObject>? = (listOf(p.stat) + p.alternatives).firstNotNullOfOrNull { name ->
+            val stat = if (p.category != null) byCategory[p.category]?.get(name) else anywhere[name]
+            stat?.let { name to it }
+        }
+
+        val groups = groupSpecs(sport).mapNotNull { (key, title, picks) ->
+            var stats = picks.mapNotNull { p ->
+                val (name, stat) = find(p) ?: return@mapNotNull null
+                // Basketball keeps per-game numbers as their own "avg..." stats.
+                val average = anywhere["avg" + name.replaceFirstChar { it.uppercase() }]
+                seasonStat(p.stat, p.label, stat, average)
+            }
             if (stats.size < 2) {
                 stats = byCategory[fallbackCategory[key]].orEmpty().entries.take(6).mapNotNull { (name, s) ->
                     seasonStat(name, s.str("displayName") ?: name, s)
@@ -174,12 +242,12 @@ object EspnTeamParser {
         return TeamSeasonStats(season, groups)
     }
 
-    private val notPerGame = listOf("pct", "per", "avg", "long", "rating", "differential", "rate")
+    private val notPerGame = listOf("pct", "per", "avg", "long", "rating", "ratio", "efficiency", "differential", "rate")
 
-    private fun seasonStat(key: String, label: String, s: JsonObject): SeasonStat? {
+    private fun seasonStat(key: String, label: String, s: JsonObject, average: JsonObject? = null): SeasonStat? {
         val value = s.str("displayValue") ?: return null
         val counting = notPerGame.none { key.lowercase(Locale.US).contains(it) }
-        val perGame = s.double("perGameValue")?.takeIf { counting }?.let { formatPerGame(it) }
+        val perGame = (s.double("perGameValue") ?: average?.double("value"))?.takeIf { counting }?.let { formatPerGame(it) }
         return SeasonStat(key, label, value, perGame)
     }
 

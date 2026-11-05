@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.outlined.SportsFootball
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -61,6 +60,7 @@ import com.sportshub.app.ui.components.Pill
 import com.sportshub.app.ui.components.SectionHeader
 import com.sportshub.app.ui.components.SportMenuButton
 import com.sportshub.app.ui.components.bottomListPadding
+import com.sportshub.app.ui.components.icon
 import com.sportshub.app.ui.favorites.FavoriteTeamsSheet
 import com.sportshub.app.ui.favorites.FollowPrompt
 import com.sportshub.app.ui.favorites.YourTeamsStrip
@@ -74,6 +74,7 @@ private val MaxContentWidth = 720.dp
 
 private val headerDate = DateTimeFormatter.ofPattern("EEEE, MMM d")
 private val clockTime = DateTimeFormatter.ofPattern("h:mm a")
+private val pillDate = DateTimeFormatter.ofPattern("EEE, MMM d")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -101,7 +102,8 @@ fun ScoresScreen(
     val board = state.board
     val subtitle = when {
         board?.week != null && sport.hasWeeks -> if (board.seasonType == 3) "Playoffs" else "Week ${board.week}"
-        else -> LocalDate.now().format(headerDate)
+        // Sports played by day: the day being shown, which follows ESPN's game day.
+        else -> (state.selectedDate ?: board?.date ?: LocalDate.now()).format(headerDate)
     }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
@@ -149,6 +151,20 @@ fun ScoresScreen(
                         }
                     }
 
+                    if (!sport.hasWeeks && board != null) {
+                        stickyHeader(key = "days", contentType = "days") {
+                            DaySelector(
+                                days = remember(state.calendar, state.currentDate, state.selectedDate) {
+                                    stripDays(state.calendar, state.currentDate ?: board.date, state.selectedDate)
+                                },
+                                // The picked day lights up straight away, not once it has loaded.
+                                selected = state.selectedDate ?: state.currentDate ?: board.date,
+                                current = state.currentDate,
+                                onSelect = viewModel::selectDate,
+                            )
+                        }
+                    }
+
                     val error = state.error
                     if (error != null && board != null) {
                         item(key = "error", contentType = "error") {
@@ -170,9 +186,13 @@ fun ScoresScreen(
                         }
                         board.games.isEmpty() -> item(key = "none") {
                             EmptyState(
-                                icon = Icons.Outlined.SportsFootball,
+                                icon = sport.icon,
                                 title = "No games",
-                                message = "There are no ${sport.shortName} games on this slate.",
+                                message = if (sport.hasWeeks) {
+                                    "There are no ${sport.shortName} games on this slate."
+                                } else {
+                                    "There are no ${sport.shortName} games on this day. Pick another day above."
+                                },
                             )
                         }
                         else -> {
@@ -181,6 +201,7 @@ fun ScoresScreen(
                                     FollowPrompt(
                                         onChoose = { picking = true },
                                         onDismiss = onDismissPrompt,
+                                        byWeek = sport.hasWeeks,
                                         modifier = Modifier.animateItem(),
                                     )
                                 }
@@ -285,6 +306,50 @@ private fun WeekSelector(weeks: Int, selected: Int?, current: Int?, onSelect: (I
                 onClick = { onSelect(week) },
                 // A dot marks this week while browsing others.
                 leading = if (week == current && week != selected) {
+                    {
+                        Box(
+                            Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.tertiary),
+                        )
+                    }
+                } else {
+                    null
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun DaySelector(days: List<LocalDate>, selected: LocalDate?, current: LocalDate?, onSelect: (LocalDate) -> Unit) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(selected, days.size) {
+        val index = days.indexOf(selected)
+        if (index >= 0) listState.animateScrollToItem((index - 2).coerceAtLeast(0))
+    }
+    val today = LocalDate.now()
+    LazyRow(
+        state = listState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(days, key = { it.toEpochDay() }) { day ->
+            Pill(
+                label = when (day) {
+                    today -> "Today"
+                    today.minusDays(1) -> "Yesterday"
+                    today.plusDays(1) -> "Tomorrow"
+                    else -> day.format(pillDate)
+                },
+                selected = day == selected,
+                onClick = { onSelect(day) },
+                // A dot marks today's slate while browsing other days.
+                leading = if (day == current && day != selected) {
                     {
                         Box(
                             Modifier
