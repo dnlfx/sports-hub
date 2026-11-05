@@ -8,7 +8,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,15 +18,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Groups
@@ -41,6 +42,7 @@ import androidx.compose.material.icons.outlined.Scoreboard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,6 +54,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -337,6 +342,7 @@ fun SportsHubRoot(container: AppContainer) {
 @Composable
 private fun BottomNavBar(current: Tab, onSelect: (Tab) -> Unit) {
     val colors = SportsHubTheme.colors
+    val haptics = LocalHapticFeedback.current
     Column(
         Modifier
             .fillMaxWidth()
@@ -349,7 +355,9 @@ private fun BottomNavBar(current: Tab, onSelect: (Tab) -> Unit) {
                 .align(Alignment.CenterHorizontally)
                 .widthIn(max = 560.dp)
                 .fillMaxWidth()
-                .height(NavBarHeight - 1.dp)
+                // Grows with large text sizes instead of clipping the labels.
+                .heightIn(min = NavBarHeight - 1.dp)
+                .selectableGroup()
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -369,14 +377,22 @@ private fun BottomNavBar(current: Tab, onSelect: (Tab) -> Unit) {
                 Column(
                     Modifier
                         .weight(1f)
-                        .fillMaxHeight()
+                        .heightIn(min = NavBarHeight - 17.dp)
                         .clip(CircleShape)
                         .background(fill)
-                        .clickable(
+                        // A tab with its selected state for screen readers, a ripple inside the
+                        // capsule, and a light tick under the finger when switching.
+                        .selectable(
+                            selected = selected,
+                            role = Role.Tab,
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { onSelect(tab) },
-                        ),
+                            indication = ripple(color = MaterialTheme.colorScheme.primary),
+                            onClick = {
+                                if (!selected) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                onSelect(tab)
+                            },
+                        )
+                        .padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {

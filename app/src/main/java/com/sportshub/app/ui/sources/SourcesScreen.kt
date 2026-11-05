@@ -55,7 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -68,8 +68,8 @@ import com.sportshub.app.model.Sport
 import com.sportshub.app.model.StreamSource
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.SectionHeader
-import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.components.SportChips
+import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.theme.SportsHubTheme
 import kotlinx.coroutines.launch
 
@@ -84,7 +84,7 @@ fun SourcesScreen(
     val loadedSources by sourcesRepository.current.collectAsStateWithLifecycle()
     val sources = loadedSources.orEmpty()
     val scope = rememberCoroutineScope()
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val focusManager = LocalFocusManager.current
     val snackbar = remember { SnackbarHostState() }
 
@@ -175,7 +175,15 @@ fun SourcesScreen(
                                 supportingText = error?.let { { Text(it) } },
                                 leadingIcon = { Icon(Icons.Outlined.Link, contentDescription = null) },
                                 trailingIcon = {
-                                    IconButton(onClick = { clipboard.getText()?.text?.let { urlInput = it.trim(); error = null } }) {
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch {
+                                                clipboard.getClipEntry()?.clipData?.takeIf { it.itemCount > 0 }
+                                                    ?.getItemAt(0)?.text?.toString()
+                                                    ?.let { urlInput = it.trim(); error = null }
+                                            }
+                                        },
+                                    ) {
                                         Icon(Icons.Outlined.ContentPaste, contentDescription = "Paste")
                                     }
                                 },
@@ -261,16 +269,12 @@ fun SourcesScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SavedSourceRow(source: StreamSource, onRemove: () -> Unit, modifier: Modifier = Modifier) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) onRemove()
-            value == SwipeToDismissBoxValue.EndToStart
-        },
-    )
+    val dismissState = rememberSwipeToDismissBoxState()
     SwipeToDismissBox(
         state = dismissState,
         modifier = modifier.clip(MaterialTheme.shapes.large),
         enableDismissFromStartToEnd = false,
+        onDismiss = { value -> if (value == SwipeToDismissBoxValue.EndToStart) onRemove() },
         backgroundContent = {
             Box(
                 Modifier

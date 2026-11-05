@@ -2,6 +2,8 @@ package com.sportshub.app.ui.watch
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sportshub.app.data.LocalNetwork
 import com.sportshub.app.data.SourcesRepository
 import com.sportshub.app.data.scan.FoundVideo
 import com.sportshub.app.data.scan.HtmlMediaExtractor
@@ -72,9 +75,9 @@ import com.sportshub.app.ui.components.EmptyState
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.LiveBadge
 import com.sportshub.app.ui.components.SectionHeader
-import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.components.SportMenuButton
 import com.sportshub.app.ui.components.TeamLogo
+import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.player.PlayerActivity
 import com.sportshub.app.ui.scores.statusLabel
 import com.sportshub.app.ui.theme.ScoreTextStyle
@@ -97,6 +100,18 @@ fun WatchScreen(
     val sources = remember(allSources, sport) { allSources.orEmpty().filter { it.sportId == sport.id } }
 
     LaunchedEffect(sources) { viewModel.ensureScanned(sources) }
+
+    // Android 17 asks before an app talks to devices on the home network. Ask only when a
+    // saved source lives there, and scan those sources again once it's allowed.
+    val localSources = remember(sources) { sources.filter { LocalNetwork.isLocalAddress(it.url) } }
+    val localNetworkPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) localSources.forEach(viewModel::scan)
+    }
+    LaunchedEffect(localSources.isNotEmpty()) {
+        if (localSources.isNotEmpty() && LocalNetwork.needsPermission(context)) {
+            localNetworkPermission.launch(LocalNetwork.PERMISSION)
+        }
+    }
     LaunchedEffect(sport) { viewModel.loadGames(sport) }
 
     fun open(video: FoundVideo) {

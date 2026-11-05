@@ -6,3 +6,8 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# Smaller, faster release code: let R8 move every class into one package and widen
+# access where that lets it inline more.
+-repackageclasses
+-allowaccessmodification

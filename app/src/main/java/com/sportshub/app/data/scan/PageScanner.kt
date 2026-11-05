@@ -1,6 +1,8 @@
 package com.sportshub.app.data.scan
 
 import androidx.compose.runtime.Immutable
+import com.sportshub.app.data.resultOf
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -8,7 +10,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
 
 @Immutable
 sealed interface ScanResult {
@@ -42,7 +43,7 @@ class PageScanner(private val http: OkHttpClient) {
         val inner = coroutineScope {
             embeds.map { embed ->
                 async {
-                    runCatching {
+                    resultOf {
                         val frame = fetch(embed.url, referer = page.finalUrl)
                         if (frame.code !in 200..299 || HtmlMediaExtractor.looksLikeHumanCheck(frame.body)) {
                             emptyList()

@@ -23,8 +23,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.FilledTonalButton
@@ -172,7 +172,7 @@ fun CompareScreen(
             when {
                 a == null || b == null -> item(key = "pick") {
                     EmptyState(
-                        icon = Icons.Outlined.CompareArrows,
+                        icon = Icons.AutoMirrored.Outlined.CompareArrows,
                         title = if (teams) "Pick two teams" else "Pick two players",
                         message = if (teams) {
                             "Put any two teams side by side: record, scoring, offense, defense and more."
@@ -216,7 +216,7 @@ fun CompareScreen(
                             if (!teams && groups.none { it.key != "bio" }) {
                                 item(key = "no_overlap") {
                                     EmptyState(
-                                        icon = Icons.Outlined.CompareArrows,
+                                        icon = Icons.AutoMirrored.Outlined.CompareArrows,
                                         title = "No stats in common",
                                         message = "These two don't share a stat category. Players at the same position compare best.",
                                     )

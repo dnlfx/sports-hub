@@ -12,8 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -23,12 +23,15 @@ import com.sportshub.app.model.Team
 /**
  * Team logo with a lettered badge while it loads or when there is none.
  * A logo shown anywhere before comes straight from memory on the first frame.
+ *
+ * Logos almost always sit next to the team's name, so screen readers skip them unless a
+ * [contentDescription] is given; otherwise every team would be read out twice.
  */
 @Composable
-fun TeamLogo(team: Team, modifier: Modifier = Modifier, size: Dp = 32.dp) {
+fun TeamLogo(team: Team, modifier: Modifier = Modifier, size: Dp = 32.dp, contentDescription: String? = null) {
     RetryingImage(
         url = team.logoUrl,
-        contentDescription = team.name,
+        contentDescription = contentDescription,
         modifier = modifier.size(size),
         placeholder = {
             Box(
