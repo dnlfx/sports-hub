@@ -42,7 +42,7 @@ fun LargeHeaderBar(
         },
         actions = actions,
         scrollBehavior = scrollBehavior,
-        colors = TopAppBarDefaults.largeTopAppBarColors(
+        colors = TopAppBarDefaults.topAppBarColors(
             containerColor = background,
             scrolledContainerColor = background,
         ),

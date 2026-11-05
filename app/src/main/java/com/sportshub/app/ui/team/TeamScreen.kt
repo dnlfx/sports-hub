@@ -30,8 +30,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.QueryStats
@@ -194,7 +194,7 @@ fun TeamScreen(
                         )
                     }
                     IconButton(onClick = { onCompare(team) }) {
-                        Icon(Icons.Outlined.CompareArrows, contentDescription = "Compare with another team", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Outlined.CompareArrows, contentDescription = "Compare with another team", tint = Color.White)
                     }
                     // A toggle, so screen readers say "Follow team, on/off", with a tick to match.
                     val haptics = LocalHapticFeedback.current

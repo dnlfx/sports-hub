@@ -26,8 +26,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -119,7 +119,7 @@ fun PlayerProfileScreen(
                         )
                     },
                 ) {
-                    Icon(Icons.Outlined.CompareArrows, contentDescription = "Compare with another player", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Outlined.CompareArrows, contentDescription = "Compare with another player", tint = Color.White)
                 }
             }
         }

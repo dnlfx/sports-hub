@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -82,7 +82,7 @@ fun TeamsScreen(
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onCompare) {
-                        Icon(Icons.Outlined.CompareArrows, contentDescription = "Compare teams or players")
+                        Icon(Icons.AutoMirrored.Outlined.CompareArrows, contentDescription = "Compare teams or players")
                     }
                     SportMenuButton(selected = sport, onSelect = onSelectSport)
                 },
