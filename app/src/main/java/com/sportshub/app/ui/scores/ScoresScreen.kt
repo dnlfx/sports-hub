@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -54,19 +55,22 @@ import com.sportshub.app.model.Game
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
+import com.sportshub.app.ui.components.EmptyState
+import com.sportshub.app.ui.components.LargeHeaderBar
+import com.sportshub.app.ui.components.Pill
+import com.sportshub.app.ui.components.SectionHeader
+import com.sportshub.app.ui.components.SportMenuButton
+import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.favorites.FavoriteTeamsSheet
 import com.sportshub.app.ui.favorites.FollowPrompt
 import com.sportshub.app.ui.favorites.YourTeamsStrip
-import com.sportshub.app.ui.components.EmptyState
-import com.sportshub.app.ui.components.LargeHeaderBar
-import com.sportshub.app.ui.components.SectionHeader
-import com.sportshub.app.ui.components.SportMenuButton
-import com.sportshub.app.ui.components.Pill
-import com.sportshub.app.ui.components.bottomListPadding
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+/** Widest the list of games gets on big screens. */
+private val MaxContentWidth = 720.dp
 
 private val headerDate = DateTimeFormatter.ofPattern("EEEE, MMM d")
 private val clockTime = DateTimeFormatter.ofPattern("h:mm a")
@@ -120,64 +124,69 @@ fun ScoresScreen(
                 .padding(padding)
                 .fillMaxSize(),
         ) {
-            LazyColumn(
-                // The app bar's scroll connection sits inside pull-to-refresh, so pulling down
-                // at the top first expands the bar, then refreshes.
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(scrollBehavior.nestedScrollConnection),
-                contentPadding = PaddingValues(bottom = bottomListPadding()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                if (sport.hasWeeks && board != null && board.seasonType == 2) {
-                    stickyHeader(key = "weeks", contentType = "weeks") {
-                        WeekSelector(
-                            weeks = sport.regularSeasonWeeks,
-                            // The picked week lights up straight away, not once it has loaded.
-                            selected = state.selectedWeek ?: board.week,
-                            current = state.currentWeek,
-                            onSelect = viewModel::selectWeek,
-                        )
-                    }
-                }
-
-                val error = state.error
-                if (error != null && board != null) {
-                    item(key = "error", contentType = "error") {
-                        ErrorBanner(error, savedAtMs = board.fetchedAtEpochMs, onRetry = viewModel::refresh)
-                    }
-                }
-
-                when {
-                    state.isLoading -> items(4, key = { "skeleton$it" }, contentType = { "skeleton" }) {
-                        GameCardSkeleton(Modifier.padding(horizontal = 16.dp))
-                    }
-                    board == null -> item(key = "empty") {
-                        EmptyState(
-                            icon = Icons.Outlined.CloudOff,
-                            title = "Couldn't load scores",
-                            message = (error ?: "Something went wrong.") + " Check your connection and try again.",
-                            action = { FilledTonalButton(onClick = viewModel::refresh) { Text("Try again") } },
-                        )
-                    }
-                    board.games.isEmpty() -> item(key = "none") {
-                        EmptyState(
-                            icon = Icons.Outlined.SportsFootball,
-                            title = "No games",
-                            message = "There are no ${sport.shortName} games on this slate.",
-                        )
-                    }
-                    else -> {
-                        if (favoriteTeams.isEmpty() && !promptDismissed) {
-                            item(key = "follow_prompt", contentType = "prompt") {
-                                FollowPrompt(
-                                    onChoose = { picking = true },
-                                    onDismiss = onDismissPrompt,
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                // On tablets, foldables and in landscape the cards keep a comfortable reading
+                // width in the middle instead of stretching edge to edge.
+                val side = ((maxWidth - MaxContentWidth) / 2).coerceAtLeast(0.dp)
+                LazyColumn(
+                    // The app bar's scroll connection sits inside pull-to-refresh, so pulling down
+                    // at the top first expands the bar, then refreshes.
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    contentPadding = PaddingValues(start = side, end = side, bottom = bottomListPadding()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (sport.hasWeeks && board != null && board.seasonType == 2) {
+                        stickyHeader(key = "weeks", contentType = "weeks") {
+                            WeekSelector(
+                                weeks = sport.regularSeasonWeeks,
+                                // The picked week lights up straight away, not once it has loaded.
+                                selected = state.selectedWeek ?: board.week,
+                                current = state.currentWeek,
+                                onSelect = viewModel::selectWeek,
+                            )
                         }
-                        gameSections(state.sections, board, favoriteTeams, onOpenGame, onOpenTeam, onEditFavorites = { picking = true })
+                    }
+
+                    val error = state.error
+                    if (error != null && board != null) {
+                        item(key = "error", contentType = "error") {
+                            ErrorBanner(error, savedAtMs = board.fetchedAtEpochMs, onRetry = viewModel::refresh)
+                        }
+                    }
+
+                    when {
+                        state.isLoading -> items(4, key = { "skeleton$it" }, contentType = { "skeleton" }) {
+                            GameCardSkeleton(Modifier.padding(horizontal = 16.dp))
+                        }
+                        board == null -> item(key = "empty") {
+                            EmptyState(
+                                icon = Icons.Outlined.CloudOff,
+                                title = "Couldn't load scores",
+                                message = (error ?: "Something went wrong.") + " Check your connection and try again.",
+                                action = { FilledTonalButton(onClick = viewModel::refresh) { Text("Try again") } },
+                            )
+                        }
+                        board.games.isEmpty() -> item(key = "none") {
+                            EmptyState(
+                                icon = Icons.Outlined.SportsFootball,
+                                title = "No games",
+                                message = "There are no ${sport.shortName} games on this slate.",
+                            )
+                        }
+                        else -> {
+                            if (favoriteTeams.isEmpty() && !promptDismissed) {
+                                item(key = "follow_prompt", contentType = "prompt") {
+                                    FollowPrompt(
+                                        onChoose = { picking = true },
+                                        onDismiss = onDismissPrompt,
+                                        modifier = Modifier.animateItem(),
+                                    )
+                                }
+                            }
+                            gameSections(state.sections, board, favoriteTeams, onOpenGame, onOpenTeam, onEditFavorites = { picking = true })
+                        }
                     }
                 }
             }

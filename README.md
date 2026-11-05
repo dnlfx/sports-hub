@@ -34,13 +34,26 @@ app/src/main/java/com/sportshub/app/
   Colors Material has no role for (cards, borders, live red, win/loss) live in `SportsHubTheme.colors`.
 - A tab bar docked to the bottom edge, running under the system navigation bar. Pages sit above it, so nothing scrolls underneath; lists add `bottomListPadding()` for a little room at the end.
 - Game, team and player pages open with a full-width header in the team's colors.
-- Barlow Condensed for titles and scores, with tabular figures so digits don't shift; body text uses the system font.
-  The font is under the SIL Open Font License (`licenses/BarlowCondensed-OFL.txt`).
+- Barlow Condensed for titles and scores, with tabular figures so digits don't shift. Inter for names, labels, stats and body text,
+  bundled as one small variable font (Latin, weights 400 to 800). Both are under the SIL Open Font License (`licenses/`).
+- Large screens: game cards keep a readable width in the middle, and the Teams grid adds columns on tablets, foldables and in landscape.
+- Accessibility: tabs announce their selected state, a game card reads as one sentence ("Live. Bills 24, Jets 17. Q3 4:12."), and team logos next to a team's name stay silent so names aren't read twice.
 - Each tab has a large title that collapses on scroll, with the sport switcher in the top bar.
 - Team colors tint score cards and headers, adjusted so very dark or very light colors stay visible.
 - No loading flicker: everything already loaded is kept in memory and on disk, so pages draw in full on their first frame and refresh in place. While something loads for the first time, a placeholder of the same shape holds its place.
 
 Adding a sport means flipping `isAvailable` in `Sport.kt` and teaching the scores provider about it. The UI reads from the enum.
+
+## Performance
+
+- A baseline profile (`app/src/main/baseline-prof.txt`) plus ProfileInstaller, so startup and first scrolls run precompiled code, also for APKs installed from GitHub releases.
+- One OkHttp client with an HTTP cache: scores and game details always check with the server; team pages, rosters and player bios reuse fresh copies. Images use Coil's own disk cache.
+- R8 with class repackaging, and a Compose stability config (`compose-stability.conf`) so screens skip recomposing when lists haven't changed.
+- Network loads let coroutine cancellation through, so a cancelled load never writes a stale error to the screen.
+
+## Platform
+
+Targets Android 17 (API 37), minimum Android 8.0 (API 26). On Android 17 the app asks for local network access only if a saved source is on the home network (a private IP or a `.local` name).
 
 ## Sources
 

@@ -7,10 +7,10 @@ import com.sportshub.app.data.espn.EspnParser
 import com.sportshub.app.model.GameDetail
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Sport
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Which slate to load. A null week means "whatever is current". */
 data class SlateRequest(val season: Int? = null, val seasonType: Int? = null, val week: Int? = null) {
@@ -53,7 +53,7 @@ class EspnScoresRepository(
         }?.also { memory[sport] = it }
     }
 
-    override suspend fun scoreboard(sport: Sport, request: SlateRequest): Result<Scoreboard> = runCatching {
+    override suspend fun scoreboard(sport: Sport, request: SlateRequest): Result<Scoreboard> = resultOf {
         val body = client.scoreboard(sport, request.season, request.seasonType, request.week)
         val board = withContext(Dispatchers.Default) { EspnParser.parseScoreboard(sport, body) }
         if (request.isCurrent) {
@@ -63,7 +63,7 @@ class EspnScoresRepository(
         board
     }
 
-    override suspend fun gameDetail(sport: Sport, gameId: String): Result<GameDetail> = runCatching {
+    override suspend fun gameDetail(sport: Sport, gameId: String): Result<GameDetail> = resultOf {
         val body = client.summary(sport, gameId)
         var detail = withContext(Dispatchers.Default) {
             // Box score tables as shown: interceptions and fumbles folded in, punts and returns left out.

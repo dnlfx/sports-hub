@@ -77,7 +77,7 @@ fun LazyListScope.playerStatsItems(
         }
     }
     items(tables, key = { "table_${selected.id}_${it.key}" }, contentType = { "stat_table" }) { table ->
-        Section(table.title, trailing = { TeamLogo(selected, size = 24.dp) }) {
+        Section(table.title, trailing = { TeamLogo(selected, size = 24.dp, contentDescription = selected.name) }) {
             StatTable(table, onOpenPlayer = { onOpenPlayer(it.copy(team = selected)) })
         }
     }

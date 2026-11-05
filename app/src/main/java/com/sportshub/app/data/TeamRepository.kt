@@ -21,6 +21,8 @@ import com.sportshub.app.model.TeamPlayerStats
 import com.sportshub.app.model.TeamProfile
 import com.sportshub.app.model.TeamSchedule
 import com.sportshub.app.model.TeamSeasonStats
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -31,8 +33,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 
 /** One part of a team page. Each part loads on its own, so one slow request doesn't hold up the rest. */
 enum class TeamPart(val id: String) {
@@ -93,7 +93,7 @@ class TeamRepository(context: Context, private val client: EspnClient) {
         TeamPart.Schedule -> coroutineScope {
             // Regular season and playoffs come from separate requests; saved together as one.
             val regular = async { client.teamSchedule(sport, teamId, seasonType = 2) }
-            val playoffs = async { runCatching { client.teamSchedule(sport, teamId, seasonType = 3) }.getOrNull() }
+            val playoffs = async { resultOf { client.teamSchedule(sport, teamId, seasonType = 3) }.getOrNull() }
             val events = listOfNotNull(regular.await(), playoffs.await()).flatMap { body ->
                 ((EspnJson.parseToJsonElement(body) as? JsonObject)?.get("events") as? JsonArray).orEmpty()
             }
@@ -151,7 +151,7 @@ class TeamRepository(context: Context, private val client: EspnClient) {
      * Adds up the team's box scores. Finished games never change, so each one is
      * downloaded once and kept on disk; later visits only fetch games played since.
      */
-    suspend fun playerStats(sport: Sport, teamId: String, schedule: TeamSchedule): Result<PlayerSeasonStats> = runCatching {
+    suspend fun playerStats(sport: Sport, teamId: String, schedule: TeamSchedule): Result<PlayerSeasonStats> = resultOf {
         val ids = finishedIds(schedule)
         val perGame = coroutineScope {
             ids.map { gameId -> async { requests.withPermit { boxScore(sport, gameId) } } }.awaitAll()
@@ -224,7 +224,7 @@ class TeamRepository(context: Context, private val client: EspnClient) {
         }?.also { memory.putIfAbsent(key, it as Any) }
     }
 
-    private suspend fun <T> fetch(key: String, download: suspend () -> String, parse: (String) -> T): Result<T> = runCatching {
+    private suspend fun <T> fetch(key: String, download: suspend () -> String, parse: (String) -> T): Result<T> = resultOf {
         val body = download()
         val value = withContext(Dispatchers.Default) { parse(body) }
         memory[key] = value as Any

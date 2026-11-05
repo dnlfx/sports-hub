@@ -1,0 +1,30 @@
+# Baseline profile for Sports Hub's own code.
+#
+# Android compiles these classes and methods ahead of time when the app is installed,
+# so launch, the first Scores frame and the first scrolls don't wait on the JIT.
+# Compose, Material 3, Navigation, OkHttp and Coil ship their own profiles, which the
+# build merges in. ProfileInstaller makes this work for APKs installed outside Play too.
+#
+# Wildcards: ** matches anything, including package separators.
+
+# App start-up, the shared container and the data layer.
+HSPLcom/sportshub/app/SportsHubApp;->**(**)**
+HSPLcom/sportshub/app/MainActivity;->**(**)**
+HSPLcom/sportshub/app/AppContainer**;->**(**)**
+HSPLcom/sportshub/app/data/**;->**(**)**
+HSPLcom/sportshub/app/model/**;->**(**)**
+
+# Theme, shared components and the root navigation shell.
+HSPLcom/sportshub/app/ui/theme/**;->**(**)**
+HSPLcom/sportshub/app/ui/components/**;->**(**)**
+HSPLcom/sportshub/app/ui/SportsHubRoot**;->**(**)**
+HSPLcom/sportshub/app/ui/Tab;->**(**)**
+
+# Scores is the first tab; game pages, teams and favorites are the next stops.
+HSPLcom/sportshub/app/ui/scores/**;->**(**)**
+HSPLcom/sportshub/app/ui/favorites/**;->**(**)**
+HSPLcom/sportshub/app/ui/team/**;->**(**)**
+HSPLcom/sportshub/app/ui/athlete/**;->**(**)**
+
+# Load these classes at start-up.
+Lcom/sportshub/app/**;

@@ -15,9 +15,11 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -163,11 +165,35 @@ private val LocalExtendedColors = staticCompositionLocalOf { DarkExtended }
 // Type
 // ---------------------------------------------------------------------------
 
-/** Condensed display face for big titles and scores. Body text stays on the system font. */
+/** Condensed display face for big titles and scores. */
 val DisplayFamily = FontFamily(
     Font(R.font.barlow_condensed_semibold, FontWeight.SemiBold),
     Font(R.font.barlow_condensed_bold, FontWeight.Bold),
     Font(R.font.barlow_condensed_extrabold, FontWeight.ExtraBold),
+)
+
+/**
+ * Inter, for everything that isn't a big title or score: names, labels, stats and body text.
+ * One small variable font file (Latin, weights 400 to 800) covers every weight the app uses.
+ */
+@OptIn(ExperimentalTextApi::class)
+val BodyFamily = FontFamily(
+    listOf(400, 500, 600, 700, 800).map { weight ->
+        Font(
+            R.font.inter_variable,
+            FontWeight(weight),
+            variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
+        )
+    },
+)
+
+/** Inter reads best with tighter tracking than Material's Roboto defaults. */
+private fun TextStyle.inter(weight: FontWeight, size: Int, line: Int, tracking: Double = 0.0) = copy(
+    fontFamily = BodyFamily,
+    fontWeight = weight,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    letterSpacing = tracking.sp,
 )
 
 private val AppTypography = Typography().run {
@@ -186,10 +212,14 @@ private val AppTypography = Typography().run {
         ),
         headlineSmall = headlineSmall.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.Bold),
         titleLarge = titleLarge.copy(fontFamily = DisplayFamily, fontWeight = FontWeight.Bold, fontSize = 23.sp, letterSpacing = 0.2.sp),
-        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold),
-        titleSmall = titleSmall.copy(fontWeight = FontWeight.SemiBold),
-        labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold),
-        labelMedium = labelMedium.copy(fontWeight = FontWeight.Medium),
+        titleMedium = titleMedium.inter(FontWeight.SemiBold, 16, 22, -0.1),
+        titleSmall = titleSmall.inter(FontWeight.SemiBold, 14, 20),
+        bodyLarge = bodyLarge.inter(FontWeight.Normal, 16, 24),
+        bodyMedium = bodyMedium.inter(FontWeight.Normal, 14, 20),
+        bodySmall = bodySmall.inter(FontWeight.Normal, 12, 16, 0.1),
+        labelLarge = labelLarge.inter(FontWeight.SemiBold, 14, 20),
+        labelMedium = labelMedium.inter(FontWeight.Medium, 12, 16, 0.2),
+        labelSmall = labelSmall.inter(FontWeight.Medium, 11, 16, 0.3),
     )
 }
 
@@ -207,6 +237,7 @@ val OnHeroMuted = Color.White.copy(alpha = 0.88f)
 
 /** Small uppercase label above a group, e.g. "LIVE NOW". */
 val OverlineTextStyle = TextStyle(
+    fontFamily = BodyFamily,
     fontWeight = FontWeight.Bold,
     fontSize = 11.sp,
     lineHeight = 16.sp,
@@ -215,6 +246,7 @@ val OverlineTextStyle = TextStyle(
 
 /** Numbers in stat tables: tabular so columns line up. */
 val TableNumberStyle = TextStyle(
+    fontFamily = BodyFamily,
     fontSize = 14.sp,
     lineHeight = 20.sp,
     fontFeatureSettings = "tnum",

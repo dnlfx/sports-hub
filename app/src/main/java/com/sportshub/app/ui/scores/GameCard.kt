@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -37,6 +38,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,17 +79,44 @@ private val WinnerMarker = GenericShape { size, _ ->
     close()
 }
 
+/**
+ * What a screen reader says for a game card, as one sentence instead of every logo,
+ * name and number on its own: "Live. Bills 24, Jets 17. Q3 4:12. Bills have the ball."
+ */
+internal fun Game.spokenSummary(): String = buildString {
+    val awayName = away.team.name
+    val homeName = home.team.name
+    when (status) {
+        GameStatus.Scheduled -> {
+            append("$awayName at $homeName. ${statusLabel()}.")
+            broadcasts.firstOrNull()?.let { append(" On $it.") }
+        }
+        else -> {
+            if (isLive) append("Live. ")
+            append("$awayName ${away.score ?: 0}, $homeName ${home.score ?: 0}. ${statusLabel()}.")
+            situation?.let { s ->
+                val withBall = listOf(away.team, home.team).firstOrNull { it.id == s.possessionTeamId }
+                if (isLive && withBall != null) append(" ${withBall.name} have the ball.")
+                s.downDistance?.let { append(" $it.") }
+                if (s.isRedZone) append(" Red zone.")
+            }
+        }
+    }
+}
+
 @Composable
 fun GameCard(game: Game, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val awayColor = game.away.team.accentColor()
     val homeColor = game.home.team.accentColor()
     val colors = SportsHubTheme.colors
     val live = game.isLive
+    val spoken = remember(game) { game.spokenSummary() }
     Column(
         modifier
             .fillMaxWidth()
             .cardSurface()
-            .clickable(onClick = onClick)
+            .clickable(onClickLabel = "Open game", role = Role.Button, onClick = onClick)
+            .clearAndSetSemantics { contentDescription = spoken }
             // A soft wash of each team's color from the left edge: away on top, home below.
             .drawBehind {
                 drawRect(

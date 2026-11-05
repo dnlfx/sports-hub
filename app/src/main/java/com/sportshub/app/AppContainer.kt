@@ -15,11 +15,12 @@ import com.sportshub.app.model.Game
 import com.sportshub.app.model.PlayerRef
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import okhttp3.Cache
 import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
 
 /** Simple manual dependency container, created once in [SportsHubApp]. */
 class AppContainer(context: Context) {
@@ -30,6 +31,9 @@ class AppContainer(context: Context) {
      * a connection pool and thread pool instead of each opening their own.
      */
     private val http: OkHttpClient = OkHttpClient.Builder()
+        // Team pages, rosters and player bios are reused within the server's cache window,
+        // and revalidated with a cheap "not modified" check after that.
+        .cache(Cache(appContext.cacheDir.resolve("http"), 20L * 1024 * 1024))
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
@@ -48,7 +52,9 @@ class AppContainer(context: Context) {
      */
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(appContext)
-            .okHttpClient(http)
+            // Same connections and threads, but no HTTP cache: Coil keeps its own disk cache,
+            // so images would otherwise be stored twice.
+            .okHttpClient { http.newBuilder().cache(null).build() }
             .crossfade(180)
             .respectCacheHeaders(false)
             .memoryCache { MemoryCache.Builder(appContext).maxSizePercent(0.20).build() }

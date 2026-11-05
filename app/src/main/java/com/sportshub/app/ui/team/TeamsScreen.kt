@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,10 +20,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CompareArrows
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -90,34 +91,40 @@ fun TeamsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
+        BoxWithConstraints(
+            Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = bottomListPadding()),
         ) {
-            val groups = state.groups?.let { withYourTeams(it, favoriteIds) }
-            val followed = favoriteIds.toSet()
-            when {
-                groups != null -> groups.forEach { group ->
-                    item(key = "header_${group.key}", contentType = "header") { SectionHeader(group.title) }
-                    group.teams.chunked(4).forEachIndexed { row, teams ->
-                        item(key = "row_${group.key}_$row", contentType = "row") {
-                            TeamRow(teams, state.records, followed, onOpenTeam)
+            // Four tiles across on a phone; more on tablets, unfolded foldables and in landscape.
+            val columns = (maxWidth / 96.dp).toInt().coerceIn(4, 8)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = bottomListPadding()),
+            ) {
+                val groups = state.groups?.let { withYourTeams(it, favoriteIds) }
+                val followed = favoriteIds.toSet()
+                when {
+                    groups != null -> groups.forEach { group ->
+                        item(key = "header_${group.key}", contentType = "header") { SectionHeader(group.title) }
+                        group.teams.chunked(columns).forEachIndexed { row, teams ->
+                            item(key = "row_${group.key}_${columns}_$row", contentType = "row") {
+                                TeamRow(teams, columns, state.records, followed, onOpenTeam)
+                            }
                         }
                     }
-                }
-                state.error -> item(key = "error") {
-                    EmptyState(
-                        icon = Icons.Outlined.CloudOff,
-                        title = "Couldn't load teams",
-                        message = "Check your connection and try again.",
-                        action = { FilledTonalButton(onClick = viewModel::retry) { Text("Try again") } },
-                    )
-                }
-                else -> repeat(4) { i ->
-                    item(key = "skeleton_header$i", contentType = "header") { SectionHeader(" ") }
-                    item(key = "skeleton$i", contentType = "row") { TeamRowSkeleton() }
+                    state.error -> item(key = "error") {
+                        EmptyState(
+                            icon = Icons.Outlined.CloudOff,
+                            title = "Couldn't load teams",
+                            message = "Check your connection and try again.",
+                            action = { FilledTonalButton(onClick = viewModel::retry) { Text("Try again") } },
+                        )
+                    }
+                    else -> repeat(4) { i ->
+                        item(key = "skeleton_header$i", contentType = "header") { SectionHeader(" ") }
+                        item(key = "skeleton$i", contentType = "row") { TeamRowSkeleton(columns) }
+                    }
                 }
             }
         }
@@ -133,7 +140,13 @@ private fun withYourTeams(groups: List<TeamGroup>, favoriteIds: List<String>): L
 }
 
 @Composable
-private fun TeamRow(teams: List<TeamListing>, records: Map<String, String>, followed: Set<String>, onOpenTeam: (Team) -> Unit) {
+private fun TeamRow(
+    teams: List<TeamListing>,
+    columns: Int,
+    records: Map<String, String>,
+    followed: Set<String>,
+    onOpenTeam: (Team) -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -146,7 +159,7 @@ private fun TeamRow(teams: List<TeamListing>, records: Map<String, String>, foll
             }
         }
         // Keep tiles the same width in a short last row.
-        repeat(4 - teams.size) { Spacer(Modifier.weight(1f)) }
+        repeat(columns - teams.size) { Spacer(Modifier.weight(1f)) }
     }
 }
 
@@ -190,7 +203,7 @@ private fun TeamTileBody(listing: TeamListing, record: String?, color: Color, on
 }
 
 @Composable
-private fun TeamRowSkeleton() {
+private fun TeamRowSkeleton(columns: Int) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -198,7 +211,7 @@ private fun TeamRowSkeleton() {
             .shimmer(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        repeat(4) {
+        repeat(columns) {
             Box(
                 Modifier
                     .weight(1f)

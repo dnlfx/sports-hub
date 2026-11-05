@@ -41,6 +41,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,7 +64,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -193,10 +196,18 @@ fun TeamScreen(
                     IconButton(onClick = { onCompare(team) }) {
                         Icon(Icons.Outlined.CompareArrows, contentDescription = "Compare with another team", tint = Color.White)
                     }
-                    IconButton(onClick = { onToggleFavorite(team) }) {
+                    // A toggle, so screen readers say "Follow team, on/off", with a tick to match.
+                    val haptics = LocalHapticFeedback.current
+                    IconToggleButton(
+                        checked = isFavorite,
+                        onCheckedChange = { follow ->
+                            haptics.performHapticFeedback(if (follow) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff)
+                            onToggleFavorite(team)
+                        },
+                    ) {
                         Icon(
                             if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                            contentDescription = if (isFavorite) "Unfollow team" else "Follow team",
+                            contentDescription = "Follow team",
                             tint = Color.White,
                         )
                     }
