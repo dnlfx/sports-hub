@@ -1,0 +1,56 @@
+{
+  "leagues": [
+    {
+      "id": "46",
+      "abbreviation": "NBA",
+      "season": {"year": 2027, "type": {"type": 2, "name": "Regular Season"}},
+      "calendarType": "day",
+      "calendar": ["2026-10-20T07:00Z", "2026-10-21T07:00Z", "2026-11-04T07:00Z", "2026-11-05T07:00Z", "2026-11-05T07:00Z"]
+    }
+  ],
+  "season": {"type": 2, "year": 2027},
+  "day": {"date": "2026-11-05"},
+  "events": [
+    {
+      "id": "401800001",
+      "date": "2026-11-06T00:30Z",
+      "competitions": [
+        {
+          "id": "401800001",
+          "venue": {"fullName": "TD Garden"},
+          "status": {"clock": 0.0, "displayClock": "0.0", "period": 0, "type": {"state": "pre", "name": "STATUS_SCHEDULED", "shortDetail": "11/5 - 7:30 PM EST"}},
+          "broadcasts": [{"market": "national", "names": ["ESPN"]}],
+          "competitors": [
+            {
+              "id": "2", "homeAway": "home", "score": "0",
+              "team": {"id": "2", "abbreviation": "BOS", "shortDisplayName": "Celtics", "displayName": "Boston Celtics", "color": "008348", "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/bos.png"},
+              "records": [{"name": "overall", "type": "total", "summary": "4-2"}, {"name": "Home", "type": "home", "summary": "3-0"}],
+              "leaders": [
+                {"name": "pointsPerGame", "displayName": "Points Per Game", "leaders": [{"displayValue": "27.4", "athlete": {"id": "4065648", "shortName": "J. Tatum", "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4065648.png", "position": {"abbreviation": "SF"}}, "team": {"id": "2"}}]}
+              ]
+            },
+            {
+              "id": "20", "homeAway": "away", "score": "0",
+              "team": {"id": "20", "abbreviation": "PHI", "shortDisplayName": "76ers", "displayName": "Philadelphia 76ers", "color": "1d428a"},
+              "records": [{"name": "overall", "type": "total", "summary": "3-3"}]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401800002",
+      "date": "2026-11-06T00:00Z",
+      "competitions": [
+        {
+          "status": {"clock": 252.0, "displayClock": "4:12", "period": 3, "type": {"state": "in", "name": "STATUS_IN_PROGRESS", "shortDetail": "4:12 - 3rd"}},
+          "situation": {"lastPlay": {"text": "Jalen Brunson makes 26-foot three point jumper"}},
+          "competitors": [
+            {"homeAway": "home", "score": "78", "linescores": [{"value": 28}, {"value": 30}, {"value": 20}], "team": {"id": "18", "abbreviation": "NY", "shortDisplayName": "Knicks", "color": "1d428a"}},
+            {"homeAway": "away", "score": "81", "linescores": [{"value": 25}, {"value": 33}, {"value": 23}], "team": {"id": "17", "abbreviation": "BKN", "shortDisplayName": "Nets", "color": "000000"}}
+          ]
+        }
+      ]
+    }
+  ]
+}

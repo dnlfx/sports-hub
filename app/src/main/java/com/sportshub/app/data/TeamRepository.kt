@@ -116,7 +116,7 @@ class TeamRepository(context: Context, private val client: EspnClient) {
         TeamPart.Schedule -> EspnTeamParser.parseSchedule(sport, body).let { s ->
             s.copy(entries = s.entries.map { e -> e.copy(game = withDirectory(sport, e.game)) }.sortedBy { it.game.startTime })
         }
-        TeamPart.TeamStats -> EspnTeamParser.parseTeamStatistics(body)
+        TeamPart.TeamStats -> EspnTeamParser.parseTeamStatistics(body, sport)
         TeamPart.Roster -> EspnTeamParser.parseRoster(body)
         TeamPart.Depth -> EspnTeamParser.parseDepthCharts(body)
     } as T
@@ -158,7 +158,8 @@ class TeamRepository(context: Context, private val client: EspnClient) {
         }
         val tables = perGame.mapNotNull { game -> game.firstOrNull { it.teamId == teamId }?.tables }
         val result = withContext(Dispatchers.Default) {
-            PlayerSeasonStats(gamesCounted = tables.size, tables = BoxScore.seasonTotals(tables))
+            val totals = if (sport.isBasketball) BasketballStats.seasonTotals(tables) else BoxScore.seasonTotals(tables)
+            PlayerSeasonStats(gamesCounted = tables.size, tables = totals)
         }
         memory[key(sport, "players", teamId)] = ids to result
         result

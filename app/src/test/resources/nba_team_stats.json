@@ -1,0 +1,98 @@
+{
+ "results": {
+  "season": {
+   "year": 2027
+  },
+  "stats": {
+   "categories": [
+    {
+     "name": "defensive",
+     "stats": [
+      {
+       "name": "steals",
+       "displayValue": "48",
+       "value": 48,
+       "perGameValue": 8.0
+      },
+      {
+       "name": "blocks",
+       "displayValue": "30",
+       "value": 30
+      },
+      {
+       "name": "avgBlocks",
+       "displayValue": "5.0",
+       "value": 5.0
+      }
+     ]
+    },
+    {
+     "name": "general",
+     "stats": [
+      {
+       "name": "rebounds",
+       "displayValue": "270",
+       "value": 270
+      },
+      {
+       "name": "avgRebounds",
+       "displayValue": "45.0",
+       "value": 45.0
+      },
+      {
+       "name": "assistTurnoverRatio",
+       "displayValue": "1.9",
+       "value": 1.9
+      },
+      {
+       "name": "fouls",
+       "displayValue": "110",
+       "value": 110
+      }
+     ]
+    },
+    {
+     "name": "offensive",
+     "stats": [
+      {
+       "name": "points",
+       "displayValue": "690",
+       "value": 690
+      },
+      {
+       "name": "avgPoints",
+       "displayValue": "115.0",
+       "value": 115.0
+      },
+      {
+       "name": "fieldGoalPct",
+       "displayValue": "48.1",
+       "value": 48.1
+      },
+      {
+       "name": "threePointPct",
+       "displayValue": "37.0",
+       "value": 37.0
+      },
+      {
+       "name": "freeThrowPct",
+       "displayValue": "80.2",
+       "value": 80.2
+      },
+      {
+       "name": "assists",
+       "displayValue": "160",
+       "value": 160
+      },
+      {
+       "name": "turnovers",
+       "displayValue": "84",
+       "value": 84,
+       "perGameValue": 14.0
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

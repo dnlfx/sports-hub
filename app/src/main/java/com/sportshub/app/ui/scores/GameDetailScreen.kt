@@ -75,7 +75,6 @@ import com.sportshub.app.model.Competitor
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.PlayerRef
-import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
 import com.sportshub.app.model.TeamStatRow
 import com.sportshub.app.ui.components.EmptyState
@@ -159,15 +158,15 @@ fun GameDetailScreen(
                         when {
                             winProbability != null && winProbability.points.size >= 2 ->
                                 item(key = "winprob") { WinProbabilitySection(winProbability, game) }
-                            // ESPN charts every NFL game, so hold its place while the details load.
-                            waiting && game.sport == Sport.NFL -> item(key = "winprob") { WinProbabilitySkeleton() }
+                            // ESPN charts every NFL and NBA game, so hold its place while the details load.
+                            waiting && game.sport.hasWinProbability -> item(key = "winprob") { WinProbabilitySkeleton() }
                         }
                     }
 
                     val leaders = detail?.leaders.orEmpty()
                     val playerStats = detail?.playerStats.orEmpty()
                     if (game.status == GameStatus.Scheduled) {
-                        // Before kickoff, ESPN's leaders are each team's season leaders.
+                        // Before the game, ESPN's leaders are each team's season leaders.
                         when {
                             leaders.isNotEmpty() -> item(key = "leaders") {
                                 Section("Season leaders") { TeamLeadersContent(leaders, game, onOpenTeam, onOpenPlayer) }
@@ -497,7 +496,8 @@ internal fun SectionSkeleton(title: String, rows: Int) {
 @Composable
 private fun Linescore(game: Game) {
     val periods = maxOf(game.away.periodScores.size, game.home.periodScores.size)
-    val labels = (1..periods).map { if (it <= 4) "${game.sport.periodName}$it" else "OT" }
+    // Q1 to Q4, then OT, 2OT... for each overtime.
+    val labels = (1..periods).map { periodLabel(it, game.sport.periodName) }
     Section("Scoring") {
         LinescoreLine(null, labels + "T", header = true)
         listOf(game.away, game.home).forEach { side ->

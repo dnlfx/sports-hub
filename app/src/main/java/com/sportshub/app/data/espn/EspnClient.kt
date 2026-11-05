@@ -2,6 +2,8 @@ package com.sportshub.app.data.espn
 
 import com.sportshub.app.model.Sport
 import java.io.IOException
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -17,11 +19,22 @@ class EspnClient(private val http: OkHttpClient) {
     private val base = "https://site.api.espn.com/apis/site/v2/sports"
     private val webBase = "https://site.web.api.espn.com/apis/common/v3/sports"
 
-    suspend fun scoreboard(sport: Sport, season: Int? = null, seasonType: Int? = null, week: Int? = null): String {
+    suspend fun scoreboard(
+        sport: Sport,
+        season: Int? = null,
+        seasonType: Int? = null,
+        week: Int? = null,
+        date: LocalDate? = null,
+    ): String {
         val params = buildList {
-            if (week != null) add("week=$week")
-            if (seasonType != null) add("seasontype=$seasonType")
-            if (season != null) add("dates=$season")
+            if (date != null) {
+                // One day's games, e.g. dates=20261105.
+                add("dates=${date.format(DateTimeFormatter.BASIC_ISO_DATE)}")
+            } else {
+                if (week != null) add("week=$week")
+                if (seasonType != null) add("seasontype=$seasonType")
+                if (season != null) add("dates=$season")
+            }
         }
         val query = if (params.isEmpty()) "" else params.joinToString("&", prefix = "?")
         return get("$base/${sport.espnPath}/scoreboard$query", live = true)

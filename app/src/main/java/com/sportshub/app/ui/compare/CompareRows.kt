@@ -86,6 +86,8 @@ private val teamLowerIsBetter = setOf(
     "efficiency:totalGiveaways",
     "efficiency:totalPenalties",
     "efficiency:totalPenaltyYards",
+    "playmaking:turnovers",
+    "defense:fouls",
 )
 
 /** Team stats where neither number is better. */
@@ -154,10 +156,14 @@ private val playerLowerIsBetter = mapOf(
     "passing" to setOf("INT", "SACK", "SYL"),
     "rushing" to setOf("FUM", "LST"),
     "receiving" to setOf("FUM", "LST"),
+    // Basketball
+    "averages" to setOf("TO", "PF"),
+    "totals" to setOf("TO", "PF"),
+    "miscellaneous" to setOf("TECH", "FLAG", "EJECT"),
 )
 
 /** Columns that say how much someone played, not how well. */
-private val playerNeutral = setOf("GP", "GS")
+private val playerNeutral = setOf("GP", "GS", "MIN")
 
 private val bioRows = listOf("Age", "Height", "Weight", "Experience")
 

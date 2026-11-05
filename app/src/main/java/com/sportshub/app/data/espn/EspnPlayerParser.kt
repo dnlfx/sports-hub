@@ -95,7 +95,11 @@ object EspnPlayerParser {
             fun row(values: JsonArray?) = List(columns.size) { i -> values?.getOrNull(i)?.primitiveString() ?: "-" }
             val seasons = cat.arr("statistics").orEmpty().mapNotNull { s ->
                 val o = s.obj ?: return@mapNotNull null
-                val year = o.obj("season")?.let { it.str("year") ?: it.str("displayName") } ?: return@mapNotNull null
+                // "2024-25" for seasons that span two years (basketball), else the year.
+                val year = o.obj("season")?.let { season ->
+                    season.str("displayName")?.takeIf { Regex("""^\d{4}-\d{2}$""").matches(it.trim()) }?.trim()
+                        ?: season.str("year") ?: season.str("displayName")
+                } ?: return@mapNotNull null
                 val team = o.str("teamId")?.let { teamAbbr[it] }
                 CareerRow(year, team, row(o.arr("stats")))
             }.reversed()

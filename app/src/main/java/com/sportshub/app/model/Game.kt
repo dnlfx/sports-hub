@@ -2,6 +2,7 @@ package com.sportshub.app.model
 
 import androidx.compose.runtime.Immutable
 import java.time.Instant
+import java.time.LocalDate
 
 // Models are marked @Immutable so Compose compares them by value: after a refresh,
 // cards whose game didn't change are skipped instead of redrawn.
@@ -60,6 +61,8 @@ data class PlayerStatLine(
     val jersey: String?,
     /** One value per column of the table, in the same order as [PlayerStatTable.columns]. */
     val values: List<String>,
+    /** In the starting lineup (basketball). */
+    val starter: Boolean = false,
 )
 
 /** One box score table for one team, e.g. "Passing" with columns C/ATT, YDS, TD... */
@@ -76,7 +79,7 @@ data class PlayerStatTable(
 @Immutable
 data class TeamPlayerStats(val teamId: String, val tables: List<PlayerStatTable>)
 
-/** Football-style live situation. Other sports can leave it null. */
+/** Live situation: down and distance in football, the last play in any sport. */
 @Immutable
 data class Situation(
     val downDistance: String?,
@@ -102,7 +105,7 @@ data class Game(
     val isLive: Boolean get() = status is GameStatus.Live
 }
 
-/** A slate of games, e.g. one NFL week. */
+/** A slate of games, e.g. one NFL week or one NBA day. */
 @Immutable
 data class Scoreboard(
     val sport: Sport,
@@ -111,6 +114,10 @@ data class Scoreboard(
     val week: Int?,
     val games: List<Game>,
     val fetchedAtEpochMs: Long,
+    /** The day this slate is for, in sports played by day (the NBA). */
+    val date: LocalDate? = null,
+    /** Every day of the season with games on it, in sports played by day. */
+    val calendar: List<LocalDate> = emptyList(),
 )
 
 /** Side-by-side team stat for the game detail screen. */
@@ -129,7 +136,14 @@ data class GameDetail(
 )
 
 /** What kind of play moved the game, for the marker on the win probability chart. */
-enum class PlayKind { Touchdown, FieldGoal, Safety, Turnover, Other }
+enum class PlayKind {
+    // Football
+    Touchdown, FieldGoal, Safety,
+    // Basketball
+    ThreePointer, Dunk, Basket, FreeThrow,
+    // Both
+    Turnover, Other,
+}
 
 /** The home team's chance of winning right after one play, with the play itself when known. */
 @Immutable

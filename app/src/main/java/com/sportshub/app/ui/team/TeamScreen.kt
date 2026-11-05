@@ -448,7 +448,7 @@ private fun LazyListScope.scheduleItems(state: TeamUiState, onOpenGame: (Game) -
             scheduleGroups(schedule.entries).forEach { (title, items) ->
                 item(key = "h_$title", contentType = "header") {
                     SectionHeader(
-                        listOfNotNull(schedule.season?.toString(), title).joinToString(" "),
+                        listOfNotNull(schedule.season?.let { state.sport.seasonName(it) }, title).joinToString(" "),
                         count = items.count { it is ScheduleItem.Played },
                         padding = PaddingValues(start = 20.dp, end = 12.dp, top = 6.dp, bottom = 8.dp),
                     )
@@ -492,15 +492,17 @@ private fun ScheduleRow(entry: ScheduleEntry, teamId: String?, isNext: Boolean) 
     val date = game.startTime.atZone(ZoneId.systemDefault())
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.width(60.dp)) {
+            // Football: the week, then the day. Sports played by day: the weekday, then the date.
+            val byDay = entry.week == null && entry.label.isBlank()
             Text(
-                entry.week?.let { "WK $it" } ?: entry.label.uppercase(),
+                entry.week?.let { "WK $it" } ?: entry.label.uppercase().ifBlank { date.format(dayOfWeek).uppercase() },
                 style = OverlineTextStyle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                "${date.format(dayOfWeek)} ${date.format(shortDate)}",
+                if (byDay) date.format(shortDate) else "${date.format(dayOfWeek)} ${date.format(shortDate)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -589,8 +591,9 @@ private fun LazyListScope.playerStatsItems(state: TeamUiState, onRetry: () -> Un
         stats == null && PLAYERS_PART in state.failed -> failedItem("player stats", onRetry)
         stats == null -> {
             item(key = "p_caption") { Caption("Adding up this season's box scores…") }
-            items(3, key = { "p_skeleton$it" }) {
-                Box(Modifier.padding(bottom = 12.dp)) { SectionSkeleton(listOf("Passing", "Rushing", "Receiving")[it], rows = 4) }
+            val titles = if (state.sport.isBasketball) listOf("Per game", "Totals") else listOf("Passing", "Rushing", "Receiving")
+            items(titles.size, key = { "p_skeleton$it" }) {
+                Box(Modifier.padding(bottom = 12.dp)) { SectionSkeleton(titles[it], rows = 4) }
             }
         }
         stats.gamesCounted == 0 || stats.tables.isEmpty() -> item(key = "p_empty") {
@@ -598,7 +601,14 @@ private fun LazyListScope.playerStatsItems(state: TeamUiState, onRetry: () -> Un
         }
         else -> {
             item(key = "p_caption") {
-                Caption("Season totals from ${stats.gamesCounted} game${if (stats.gamesCounted == 1) "" else "s"}. Tap a player for their profile.")
+                val games = "${stats.gamesCounted} game${if (stats.gamesCounted == 1) "" else "s"}"
+                Caption(
+                    if (state.sport.isBasketball) {
+                        "Averages and totals from $games. Tap a player for their profile."
+                    } else {
+                        "Season totals from $games. Tap a player for their profile."
+                    },
+                )
             }
             stats.tables.forEach { table ->
                 item(key = "p_${table.key}", contentType = "stat_table") {
@@ -640,13 +650,16 @@ private fun LazyListScope.teamStatsItems(state: TeamUiState, onRetry: () -> Unit
     when {
         stats == null && TeamPart.TeamStats.id in state.failed -> failedItem("team stats", onRetry)
         stats == null -> items(3, key = { "s_skeleton$it" }) {
-            Box(Modifier.padding(bottom = 12.dp)) { SectionSkeleton(listOf("Offense", "Downs and discipline", "Defense")[it], rows = 5) }
+            val titles = if (state.sport.isBasketball) listOf("Scoring", "Ball movement", "Rebounding") else listOf("Offense", "Downs and discipline", "Defense")
+            Box(Modifier.padding(bottom = 12.dp)) { SectionSkeleton(titles[it], rows = 5) }
         }
         stats.groups.isEmpty() -> item(key = "s_empty") {
             EmptyState(Icons.Outlined.QueryStats, "No stats yet", "Team stats show up once the season starts.")
         }
         else -> {
-            stats.season?.let { season -> item(key = "s_caption") { Caption("$season season totals, with per-game averages.") } }
+            stats.season?.let { season ->
+                item(key = "s_caption") { Caption("${state.sport.seasonName(season)} season totals, with per-game averages.") }
+            }
             stats.groups.forEach { group ->
                 item(key = "s_${group.key}", contentType = "stat_group") {
                     Box(Modifier.padding(bottom = 12.dp)) {
