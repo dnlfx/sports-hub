@@ -4,10 +4,11 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,13 +26,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.QueryStats
@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,6 +99,7 @@ import com.sportshub.app.ui.scores.Section
 import com.sportshub.app.ui.scores.SectionSkeleton
 import com.sportshub.app.ui.scores.StatTable
 import com.sportshub.app.ui.theme.DisplayFamily
+import com.sportshub.app.ui.theme.OnHeroMuted
 import com.sportshub.app.ui.theme.OverlineTextStyle
 import com.sportshub.app.ui.theme.SportsHubTheme
 import java.time.ZoneId
@@ -140,7 +142,14 @@ fun TeamScreen(
     val hero = team?.heroColor() ?: MaterialTheme.colorScheme.primaryContainer
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val listState = rememberLazyListState()
-    val pastHero by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+    val density = LocalDensity.current
+    // The bar shows the team's name once the name in the header has scrolled under it.
+    val pastHero by remember(density) {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > with(density) { 72.dp.roundToPx() }
+        }
+    }
     LightStatusBarIcons(enabled = true)
 
     fun openPlayer(id: String, name: String, headshot: String?, position: String? = null, jersey: String? = null) =
@@ -233,6 +242,7 @@ fun TeamScreen(
  * The top of the page: the team's color, a giant faded logo, and the season at a glance.
  * Every line keeps its place while the profile loads, so nothing jumps when it arrives.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TeamHero(team: Team?, profile: TeamProfile?, hero: Color) {
     val deep = lerp(hero, Color.Black, 0.35f)
@@ -278,15 +288,17 @@ private fun TeamHero(team: Team?, profile: TeamProfile?, hero: Color) {
                     Text(
                         profile?.standing ?: " ",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = OnHeroMuted,
                         maxLines = 1,
                     )
                 }
             }
             Spacer(Modifier.height(20.dp))
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(26.dp),
+            // Wraps onto a second row when it doesn't fit, rather than scrolling sideways.
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 HeroStat(team?.record ?: "–", "Record")
                 profile?.splits?.forEach { HeroStat(it.summary, it.label) }
@@ -317,7 +329,7 @@ private fun HeroStat(value: String, label: String) {
         Text(
             label.uppercase(),
             style = OverlineTextStyle.copy(fontSize = 10.sp, letterSpacing = 0.8.sp),
-            color = Color.White.copy(alpha = 0.7f),
+            color = OnHeroMuted,
             maxLines = 1,
         )
     }
@@ -789,6 +801,7 @@ private fun LazyListScope.depthItems(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DepthCharts(
     charts: List<DepthChart>,
@@ -858,7 +871,7 @@ private fun DepthCharts(
                         }
                         val backups = position.players.drop(1).take(3)
                         if (backups.isNotEmpty()) {
-                            Row(Modifier.horizontalScroll(rememberScrollState())) {
+                            FlowRow {
                                 backups.forEachIndexed { b, player ->
                                     Text(
                                         "${b + 2}. ${player.name}${player.injury?.let { " (${injuryShort(it)})" } ?: ""}",

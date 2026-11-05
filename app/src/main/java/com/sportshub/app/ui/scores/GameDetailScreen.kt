@@ -87,6 +87,7 @@ import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.components.cardSurface
 import com.sportshub.app.ui.components.heroColor
 import com.sportshub.app.ui.components.shimmer
+import com.sportshub.app.ui.theme.OnHeroMuted
 import com.sportshub.app.ui.theme.OverlineTextStyle
 import com.sportshub.app.ui.theme.ScoreTextStyle
 import com.sportshub.app.ui.theme.SportsHubTheme
@@ -315,7 +316,7 @@ private fun ScoreHero(game: Game, onOpenTeam: (Team) -> Unit) {
                         Text(
                             game.statusLabel(),
                             style = MaterialTheme.typography.labelLarge,
-                            color = Color.White.copy(alpha = 0.8f),
+                            color = OnHeroMuted,
                             textAlign = TextAlign.Center,
                         )
                     }
@@ -358,7 +359,7 @@ private fun ScoreHero(game: Game, onOpenTeam: (Team) -> Unit) {
 @Composable
 private fun ScoreLine(game: Game) {
     val final = game.status is GameStatus.Final
-    val dim = Color.White.copy(alpha = 0.5f)
+    val dim = Color.White.copy(alpha = 0.6f)
     val text = buildAnnotatedString {
         withStyle(SpanStyle(color = if (final && game.home.isWinner) dim else Color.White)) {
             append("${game.away.score ?: 0}")
@@ -388,12 +389,12 @@ private fun ScoreLine(game: Game) {
 @Composable
 private fun InfoLabel(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.75f), modifier = Modifier.size(15.dp))
+        Icon(icon, contentDescription = null, tint = OnHeroMuted, modifier = Modifier.size(15.dp))
         Spacer(Modifier.width(6.dp))
         Text(
             text,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.85f),
+            color = OnHeroMuted,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -434,12 +435,12 @@ private fun HeroTeam(side: Competitor, modifier: Modifier, onOpenTeam: (Team) ->
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.6f),
+                tint = OnHeroMuted,
                 modifier = Modifier.size(16.dp),
             )
         }
         side.team.record?.let {
-            Text(it, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.75f))
+            Text(it, style = MaterialTheme.typography.bodySmall, color = OnHeroMuted)
         }
     }
 }

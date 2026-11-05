@@ -1,6 +1,7 @@
 package com.sportshub.app.ui.compare
 
 import androidx.compose.runtime.Immutable
+import com.sportshub.app.data.PositionStats
 import com.sportshub.app.model.CareerTable
 import com.sportshub.app.model.PlayerProfile
 import com.sportshub.app.model.Team
@@ -170,8 +171,11 @@ fun comparePlayers(a: PlayerSide, b: PlayerSide, career: Boolean): List<CompareG
         val vb = b.profile?.bio?.firstOrNull { it.label == label }?.value
         if (va == null && vb == null) null else compareRow(label.lowercase(), label, va, vb, neutral = true, bar = false)
     }
-    val stats = a.career.orEmpty().mapNotNull { ta ->
-        val tb = b.career?.firstOrNull { it.key == ta.key } ?: return@mapNotNull null
+    // Each player's categories for their own position, so a QB and a WR share passing only
+    // if the WR really throws.
+    val careerB = b.career?.let { PositionStats.relevant(it, b.profile?.position) }
+    val stats = a.career?.let { PositionStats.relevant(it, a.profile?.position) }.orEmpty().mapNotNull { ta ->
+        val tb = careerB?.firstOrNull { it.key == ta.key } ?: return@mapNotNull null
         val rowA = (if (career) ta.totals else ta.seasons.firstOrNull()) ?: return@mapNotNull null
         val rowB = (if (career) tb.totals else tb.seasons.firstOrNull()) ?: return@mapNotNull null
         val lower = playerLowerIsBetter[ta.key].orEmpty()

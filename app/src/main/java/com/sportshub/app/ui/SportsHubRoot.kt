@@ -8,16 +8,17 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,7 +42,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,7 +76,6 @@ import com.sportshub.app.ui.compare.CompareKind
 import com.sportshub.app.ui.compare.CompareScreen
 import com.sportshub.app.ui.compare.CompareViewModel
 import com.sportshub.app.ui.components.LightStatusBarIcons
-import com.sportshub.app.ui.components.LocalBottomBarSpace
 import com.sportshub.app.ui.scores.GameDetailScreen
 import com.sportshub.app.ui.scores.GameDetailViewModel
 import com.sportshub.app.ui.scores.ScoresScreen
@@ -105,9 +103,8 @@ private const val COMPARE_ROUTE = "compare/{sportId}/{kind}/{firstId}"
 private fun isDetailRoute(route: String?) = route != null &&
     listOf("game/", "team/", "player/", "compare/").any { route.startsWith(it) }
 
-/** Height of the floating navigation bar, and the gap around it. */
-private val NavBarHeight = 64.dp
-private val NavBarMargin = 12.dp
+/** Height of the bottom navigation bar, not counting the system navigation bar below it. */
+private val NavBarHeight = 68.dp
 
 @Composable
 fun SportsHubRoot(container: AppContainer) {
@@ -160,14 +157,22 @@ fun SportsHubRoot(container: AppContainer) {
     if (!isDetailRoute(route)) LightStatusBarIcons(enabled = false)
 
     val systemNavBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val barSpace = NavBarHeight + NavBarMargin * 2 + systemNavBar
 
-    Box(
+    // Pages sit above the navigation bar instead of scrolling under it. The bar covers the
+    // system navigation area too, so the gesture pill or the back/home buttons sit on it.
+    Column(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        CompositionLocalProvider(LocalBottomBarSpace provides barSpace) {
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                // The bar already makes room for the system navigation bar (and the keyboard
+                // covers both), so pages don't pad for it again.
+                .consumeWindowInsets(PaddingValues(bottom = NavBarHeight + systemNavBar)),
+        ) {
             NavHost(
                 navController = navController,
                 startDestination = Tab.Scores.route,
@@ -321,77 +326,75 @@ fun SportsHubRoot(container: AppContainer) {
             }
         }
 
-        FloatingNavBar(
-            current = currentTab,
-            onSelect = ::selectTab,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = NavBarMargin),
-        )
+        BottomNavBar(current = currentTab, onSelect = ::selectTab)
     }
 }
 
 /**
- * The tab bar: a pill that floats above the content. The selected tab gets a tinted
- * capsule behind its icon and label.
+ * The tab bar, docked to the bottom edge. The selected tab gets a tinted capsule behind
+ * its icon and label.
  */
 @Composable
-private fun FloatingNavBar(current: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
+private fun BottomNavBar(current: Tab, onSelect: (Tab) -> Unit) {
     val colors = SportsHubTheme.colors
-    Row(
-        modifier
-            .widthIn(max = 480.dp)
+    Column(
+        Modifier
             .fillMaxWidth()
-            .height(NavBarHeight)
-            .shadow(if (colors.isDark) 0.dp else 18.dp, CircleShape, clip = false)
-            .clip(CircleShape)
             .background(colors.chrome)
-            .border(1.dp, colors.stroke, CircleShape)
-            .padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .navigationBarsPadding(),
     ) {
-        Tab.entries.forEach { tab ->
-            val selected = tab == current
-            val tint by animateColorAsState(
-                if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                tween(200),
-                label = "tabTint",
-            )
-            val fill by animateColorAsState(
-                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else MaterialTheme.colorScheme.primary.copy(alpha = 0f),
-                tween(200),
-                label = "tabFill",
-            )
-            Column(
-                Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(CircleShape)
-                    .background(fill)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { onSelect(tab) },
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Icon(
-                    if (selected) tab.selectedIcon else tab.icon,
-                    contentDescription = null,
-                    tint = tint,
-                    modifier = Modifier.size(22.dp),
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.stroke))
+        Row(
+            Modifier
+                .align(Alignment.CenterHorizontally)
+                .widthIn(max = 560.dp)
+                .fillMaxWidth()
+                .height(NavBarHeight - 1.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Tab.entries.forEach { tab ->
+                val selected = tab == current
+                val tint by animateColorAsState(
+                    if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tween(200),
+                    label = "tabTint",
                 )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    tab.label,
-                    color = tint,
-                    fontSize = 11.sp,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                    maxLines = 1,
+                val fill by animateColorAsState(
+                    if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else MaterialTheme.colorScheme.primary.copy(alpha = 0f),
+                    tween(200),
+                    label = "tabFill",
                 )
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(CircleShape)
+                        .background(fill)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { onSelect(tab) },
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        if (selected) tab.selectedIcon else tab.icon,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(22.dp),
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        tab.label,
+                        color = tint,
+                        fontSize = 12.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }

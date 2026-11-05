@@ -50,6 +50,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sportshub.app.data.PositionStats
+import com.sportshub.app.model.BioItem
 import com.sportshub.app.model.CareerTable
 import com.sportshub.app.model.PlayerRef
 import com.sportshub.app.model.Team
@@ -59,11 +61,13 @@ import com.sportshub.app.ui.components.PlayerHeadshot
 import com.sportshub.app.ui.components.TeamLogo
 import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.components.heroColor
+import com.sportshub.app.ui.components.shimmer
 import com.sportshub.app.ui.scores.GridRow
 import com.sportshub.app.ui.scores.Section
 import com.sportshub.app.ui.scores.SectionSkeleton
 import com.sportshub.app.ui.scores.StatGrid
 import com.sportshub.app.ui.theme.DisplayFamily
+import com.sportshub.app.ui.theme.OnHeroMuted
 import com.sportshub.app.ui.theme.OverlineTextStyle
 import com.sportshub.app.ui.theme.SportsHubTheme
 
@@ -83,6 +87,9 @@ fun PlayerProfileScreen(
     val name = profile?.name ?: ref?.name.orEmpty()
     val headshot = profile?.headshotUrl ?: ref?.headshotUrl
     val hero = team?.heroColor() ?: Color(0xFF1E3F8C)
+    // Only the stat categories that fit the player's position (plus any they really play).
+    val position = profile?.position ?: ref?.position
+    val relevantCareer = remember(state.career, position) { state.career?.let { PositionStats.relevant(it, position) } }
     LightStatusBarIcons(enabled = true)
 
     Column(
@@ -167,7 +174,7 @@ fun PlayerProfileScreen(
                         Text(
                             line.ifEmpty { " " },
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = OnHeroMuted,
                         )
                         if (team != null) {
                             Spacer(Modifier.height(10.dp))
@@ -182,6 +189,16 @@ fun PlayerProfileScreen(
                                 TeamLogo(team, size = 22.dp)
                                 Spacer(Modifier.width(8.dp))
                                 Text(team.name, style = MaterialTheme.typography.labelLarge, color = Color.White)
+                            }
+                        }
+                        when {
+                            profile != null -> if (profile.bio.isNotEmpty()) {
+                                Spacer(Modifier.height(18.dp))
+                                HeroBio(profile.bio)
+                            }
+                            !state.profileFailed -> {
+                                Spacer(Modifier.height(18.dp))
+                                HeroBioSkeleton()
                             }
                         }
                     }
@@ -213,32 +230,6 @@ fun PlayerProfileScreen(
                             }
                         }
                     }
-                    if (profile.bio.isNotEmpty()) {
-                        item(key = "bio") {
-                            Section("Bio") {
-                                FlowRow(
-                                    Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                                    maxItemsInEachRow = 2,
-                                ) {
-                                    profile.bio.forEach { item ->
-                                        Column(
-                                            Modifier
-                                                .weight(1f)
-                                                .clip(MaterialTheme.shapes.medium)
-                                                .background(SportsHubTheme.colors.cardHigh)
-                                                .padding(12.dp),
-                                        ) {
-                                            Text(item.label.uppercase(), style = OverlineTextStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            Spacer(Modifier.height(2.dp))
-                                            Text(item.value, style = MaterialTheme.typography.titleSmall)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
                 state.profileFailed -> item(key = "failed") {
                     EmptyState(
@@ -248,10 +239,10 @@ fun PlayerProfileScreen(
                         action = { FilledTonalButton(onClick = viewModel::retry) { Text("Try again") } },
                     )
                 }
-                else -> item(key = "bio_skeleton") { SectionSkeleton("Bio", rows = 4) }
+                else -> Unit
             }
 
-            val career = state.career
+            val career = relevantCareer
             when {
                 career == null && !state.careerFailed -> item(key = "career_skeleton") { SectionSkeleton("Career", rows = 5) }
                 career.isNullOrEmpty() -> Unit
@@ -265,6 +256,52 @@ fun PlayerProfileScreen(
                     career.forEach { table ->
                         item(key = "career_${table.key}", contentType = "career") { CareerSection(table) }
                     }
+                }
+            }
+        }
+    }
+}
+
+/** Height, age, college and the rest, two to a row on the header under the player's name. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun HeroBio(bio: List<BioItem>) {
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        maxItemsInEachRow = 2,
+    ) {
+        bio.forEach { item ->
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(Color.Black.copy(alpha = 0.22f))
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+            ) {
+                Text(item.label.uppercase(), style = OverlineTextStyle, color = OnHeroMuted, maxLines = 1)
+                Spacer(Modifier.height(2.dp))
+                Text(item.value, style = MaterialTheme.typography.titleSmall, color = Color.White)
+            }
+        }
+    }
+}
+
+/** Placeholder tiles the size of [HeroBio] while the profile loads. */
+@Composable
+private fun HeroBioSkeleton() {
+    Column(Modifier.fillMaxWidth().shimmer(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        repeat(2) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                repeat(2) {
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(54.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(Color.Black.copy(alpha = 0.22f)),
+                    )
                 }
             }
         }

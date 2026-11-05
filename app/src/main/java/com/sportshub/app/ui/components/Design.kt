@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,15 +39,10 @@ import com.sportshub.app.ui.theme.OverlineTextStyle
 import com.sportshub.app.ui.theme.SportsHubTheme
 
 /**
- * Space taken at the bottom of the screen by the floating navigation bar (and the system
- * navigation bar under it). Scrolling lists add it to their bottom padding so their last
- * item can scroll clear of the bar.
+ * Bottom padding for a scrolling list, so its last item doesn't end flush against the
+ * navigation bar. Pages sit above the bar, so this is only breathing room.
  */
-val LocalBottomBarSpace = compositionLocalOf { 0.dp }
-
-/** Bottom padding for a scrolling list: [extra] plus room for the floating navigation bar. */
-@Composable
-fun bottomListPadding(extra: Dp = 24.dp): Dp = LocalBottomBarSpace.current + extra
+fun bottomListPadding(extra: Dp = 24.dp): Dp = extra
 
 /** A card: the card color with a hairline border, clipped to [shape]. */
 @Composable

@@ -68,7 +68,6 @@ import com.sportshub.app.model.Sport
 import com.sportshub.app.model.StreamSource
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.SectionHeader
-import com.sportshub.app.ui.components.LocalBottomBarSpace
 import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.components.SportChips
 import com.sportshub.app.ui.theme.SportsHubTheme
@@ -144,7 +143,7 @@ fun SourcesScreen(
                 scrollBehavior = scrollBehavior,
             )
         },
-        snackbarHost = { SnackbarHost(snackbar, modifier = Modifier.padding(bottom = LocalBottomBarSpace.current)) },
+        snackbarHost = { SnackbarHost(snackbar) },
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { padding ->
