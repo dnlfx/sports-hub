@@ -12,7 +12,7 @@ import com.sportshub.app.model.Sport
 /** The ball for each sport, for empty states and the sport menu. */
 val Sport.icon: ImageVector
     get() = when (this) {
-        Sport.NFL -> Icons.Outlined.SportsFootball
+        Sport.NFL, Sport.NCAAF -> Icons.Outlined.SportsFootball
         Sport.NBA -> Icons.Outlined.SportsBasketball
         Sport.MLB -> Icons.Outlined.SportsBaseball
         Sport.NHL -> Icons.Outlined.SportsHockey

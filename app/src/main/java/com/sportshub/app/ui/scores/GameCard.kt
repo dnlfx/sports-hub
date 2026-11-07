@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,8 +85,9 @@ private val WinnerMarker = GenericShape { size, _ ->
  * name and number on its own: "Live. Bills 24, Jets 17. Q3 4:12. Bills have the ball."
  */
 internal fun Game.spokenSummary(): String = buildString {
-    val awayName = away.team.name
-    val homeName = home.team.name
+    // Ranked college teams are read with their rank: "Number 5 Ohio State".
+    val awayName = away.rank?.let { "Number $it ${away.team.name}" } ?: away.team.name
+    val homeName = home.rank?.let { "Number $it ${home.team.name}" } ?: home.team.name
     when (status) {
         GameStatus.Scheduled -> {
             append("$awayName at $homeName. ${statusLabel()}.")
@@ -170,6 +172,15 @@ private fun TeamLine(side: Competitor, game: Game, opponent: Competitor) {
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                side.rank?.let { rank ->
+                    Text(
+                        "$rank",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(5.dp))
+                }
                 Text(
                     side.team.name,
                     style = MaterialTheme.typography.titleMedium,

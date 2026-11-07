@@ -1,5 +1,6 @@
 package com.sportshub.app.data.espn
 
+import com.sportshub.app.data.CollegeFootball
 import com.sportshub.app.model.Sport
 import java.io.IOException
 import java.time.LocalDate
@@ -35,6 +36,12 @@ class EspnClient(private val http: OkHttpClient) {
                 if (seasonType != null) add("seasontype=$seasonType")
                 if (season != null) add("dates=$season")
             }
+            // College scoreboards show only the Top 25 unless asked for all of FBS. The
+            // parser then keeps the games with a team from the top conferences.
+            if (sport.isCollegeFootball) {
+                add("groups=${CollegeFootball.FBS_GROUP}")
+                add("limit=300")
+            }
         }
         val query = if (params.isEmpty()) "" else params.joinToString("&", prefix = "?")
         return get("$base/${sport.espnPath}/scoreboard$query", live = true)
@@ -43,7 +50,9 @@ class EspnClient(private val http: OkHttpClient) {
     suspend fun summary(sport: Sport, eventId: String): String =
         get("$base/${sport.espnPath}/summary?event=$eventId", live = true)
 
-    suspend fun teams(sport: Sport): String = get("$base/${sport.espnPath}/teams")
+    /** The league's teams. [query] narrows or widens the list, e.g. "limit=1000" for every college team. */
+    suspend fun teams(sport: Sport, query: String? = null): String =
+        get("$base/${sport.espnPath}/teams" + (query?.let { "?$it" } ?: ""))
 
     suspend fun team(sport: Sport, teamId: String): String = get("$base/${sport.espnPath}/teams/$teamId")
 

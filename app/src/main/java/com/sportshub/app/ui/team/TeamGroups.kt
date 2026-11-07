@@ -1,6 +1,7 @@
 package com.sportshub.app.ui.team
 
 import androidx.compose.runtime.Immutable
+import com.sportshub.app.data.CollegeFootball
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.TeamListing
 
@@ -33,8 +34,13 @@ private val nbaDivisions: List<Triple<String, String, List<String>>> = listOf(
     Triple("West", "West · Southwest", listOf("DAL", "HOU", "MEM", "NO", "NOP", "SA", "SAS")),
 )
 
+/** College football conferences, by ESPN team id: college abbreviations aren't unique enough. */
+private val collegeConferences: List<Triple<String, String, List<String>>> =
+    CollegeFootball.conferences.map { Triple(it.name, it.name, it.teamIds) }
+
 private fun divisions(sport: Sport): List<Triple<String, String, List<String>>>? = when (sport) {
     Sport.NFL -> nflDivisions
+    Sport.NCAAF -> collegeConferences
     Sport.NBA -> nbaDivisions
     else -> null
 }
@@ -43,10 +49,10 @@ private fun divisions(sport: Sport): List<Triple<String, String, List<String>>>?
 internal fun groupTeams(sport: Sport, list: List<TeamListing>): List<TeamGroup> {
     val divisions = divisions(sport)
         ?: return listOf(TeamGroup("all", "", "All teams", list.sortedBy { it.displayName }))
-    val byAbbr = list.associateBy { it.team.abbreviation.uppercase() }
+    val byKey = if (sport.isCollegeFootball) list.associateBy { it.team.id } else list.associateBy { it.team.abbreviation.uppercase() }
     val used = mutableSetOf<String>()
-    val groups = divisions.mapNotNull { (conference, title, abbrs) ->
-        val teams = abbrs.mapNotNull { byAbbr[it] }.distinctBy { it.team.id }.filter { it.team.id !in used }
+    val groups = divisions.mapNotNull { (conference, title, keys) ->
+        val teams = keys.mapNotNull { byKey[it] }.distinctBy { it.team.id }.filter { it.team.id !in used }
         used += teams.map { it.team.id }
         TeamGroup(title, conference, title, teams).takeIf { teams.isNotEmpty() }
     }

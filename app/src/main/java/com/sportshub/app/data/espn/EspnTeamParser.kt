@@ -1,5 +1,6 @@
 package com.sportshub.app.data.espn
 
+import com.sportshub.app.data.CollegeFootball
 import com.sportshub.app.model.DepthChart
 import com.sportshub.app.model.DepthPlayer
 import com.sportshub.app.model.DepthPosition
@@ -25,13 +26,15 @@ import java.util.Locale
  */
 object EspnTeamParser {
 
-    fun parseTeams(body: String): List<TeamListing> {
+    /** The league's teams. In college football, only the top conferences' teams. */
+    fun parseTeams(body: String, sport: Sport? = null): List<TeamListing> {
         val root = EspnJson.parseToJsonElement(body).obj
         val teams = root?.arr("sports")?.firstOrNull()?.obj?.arr("leagues")?.firstOrNull()?.obj?.arr("teams").orEmpty()
         return teams.mapNotNull { entry ->
             val t = entry.obj?.obj("team") ?: entry.obj ?: return@mapNotNull null
             if (t.bool("isActive") == false) return@mapNotNull null
             val team = teamOf(t) ?: return@mapNotNull null
+            if (sport?.isCollegeFootball == true && !CollegeFootball.isTopTeam(team.id)) return@mapNotNull null
             TeamListing(team, t.str("displayName") ?: team.name)
         }
     }

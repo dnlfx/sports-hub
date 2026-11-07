@@ -1,5 +1,6 @@
 package com.sportshub.app.data.espn
 
+import com.sportshub.app.data.CollegeFootball
 import com.sportshub.app.model.Competitor
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.GameDetail
@@ -35,6 +36,8 @@ object EspnParser {
         val root = json.parseToJsonElement(body).obj
         val events = root?.arr("events").orEmpty()
         val games = events.mapNotNull { runCatching { parseEvent(sport, it.obj) }.getOrNull() }
+            // College football: only games with a team from the top conferences.
+            .filter { !sport.isCollegeFootball || CollegeFootball.isTopGame(it) }
             .sortedWith(compareBy<Game> { statusOrder(it.status) }.thenBy { it.startTime })
         return Scoreboard(
             sport = sport,
@@ -405,6 +408,8 @@ object EspnParser {
                 ls.obj?.let { it.str("value") ?: it.str("displayValue") }?.toDoubleOrNull()?.toInt()
             },
             isWinner = c.bool("winner") ?: false,
+            // College polls: ESPN marks unranked teams as 99.
+            rank = c.obj("curatedRank")?.int("current")?.takeIf { it in 1..25 },
         )
     }
 

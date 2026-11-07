@@ -12,6 +12,7 @@ package com.sportshub.app.model
  * game page can hold the chart's place while it loads.
  * [seasonSpansYears] is true for leagues whose season runs across New Year, like the
  * NBA's 2025-26 season, which ESPN files under its last year (2026).
+ * [postseasonName] is what the slate after the regular season is called.
  */
 enum class Sport(
     val id: String,
@@ -25,10 +26,21 @@ enum class Sport(
     val startWord: String = "the start",
     val hasWinProbability: Boolean = false,
     val seasonSpansYears: Boolean = false,
+    val postseasonName: String = "Playoffs",
 ) {
     NFL(
         "nfl", "NFL Football", "NFL", true, "football/nfl", "Q",
         hasWeeks = true, regularSeasonWeeks = 18, startWord = "kickoff", hasWinProbability = true,
+    ),
+
+    /**
+     * College football, limited to the Power 4 conferences and Notre Dame (see
+     * [com.sportshub.app.data.CollegeFootball]). Week 15 is conference championship week.
+     */
+    NCAAF(
+        "ncaaf", "College Football", "NCAAF", true, "football/college-football", "Q",
+        hasWeeks = true, regularSeasonWeeks = 15, startWord = "kickoff", hasWinProbability = true,
+        postseasonName = "Bowls and playoff",
     ),
     NBA(
         "nba", "NBA Basketball", "NBA", true, "basketball/nba", "Q",
@@ -44,6 +56,9 @@ enum class Sport(
 
     /** True for basketball, whose box scores, stats and plays read differently from football's. */
     val isBasketball: Boolean get() = espnPath.startsWith("basketball/")
+
+    /** True for college football, where only the top conferences' teams are shown. */
+    val isCollegeFootball: Boolean get() = this == NCAAF
 
     companion object {
         val default: Sport = NFL

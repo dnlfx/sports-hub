@@ -421,6 +421,10 @@ private fun HeroTeam(side: Competitor, modifier: Modifier, onOpenTeam: (Team) ->
         }
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
+            side.rank?.let { rank ->
+                Text("$rank", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = OnHeroMuted)
+                Spacer(Modifier.width(4.dp))
+            }
             Text(
                 side.team.name,
                 style = MaterialTheme.typography.titleMedium,
