@@ -34,6 +34,8 @@ data class Competitor(
     val score: Int?,
     val periodScores: List<Int> = emptyList(),
     val isWinner: Boolean = false,
+    /** Poll rank (AP Top 25, or the CFP ranking late in the season) in college football. */
+    val rank: Int? = null,
 )
 
 /**

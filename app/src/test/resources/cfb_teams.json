@@ -1,0 +1,9 @@
+{"sports":[{"leagues":[{"teams":[
+ {"team":{"id":"2006","abbreviation":"AKR","displayName":"Akron Zips","shortDisplayName":"Akron","color":"041e42"}},
+ {"team":{"id":"333","abbreviation":"ALA","displayName":"Alabama Crimson Tide","shortDisplayName":"Alabama","color":"9e1b32","logos":[{"href":"https://a.espncdn.com/i/teamlogos/ncaa/500/333.png"}]}},
+ {"team":{"id":"87","abbreviation":"ND","displayName":"Notre Dame Fighting Irish","shortDisplayName":"Notre Dame","color":"0c2340"}},
+ {"team":{"id":"2390","abbreviation":"MIA","displayName":"Miami Hurricanes","shortDisplayName":"Miami","color":"005030"}},
+ {"team":{"id":"193","abbreviation":"M-OH","displayName":"Miami (OH) RedHawks","shortDisplayName":"Miami (OH)","color":"c3142d"}},
+ {"team":{"id":"194","abbreviation":"OSU","displayName":"Ohio State Buckeyes","shortDisplayName":"Ohio State","color":"ba0c2f"}},
+ {"team":{"id":"252","abbreviation":"BYU","displayName":"BYU Cougars","shortDisplayName":"BYU","color":"002e5d"}}
+]}]}]}

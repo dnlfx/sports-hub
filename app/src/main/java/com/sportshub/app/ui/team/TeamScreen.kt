@@ -414,7 +414,7 @@ private sealed interface ScheduleItem {
 }
 
 /** Games in date order, with a bye row for each week the team doesn't play. */
-private fun scheduleGroups(entries: List<ScheduleEntry>): List<Pair<String, List<ScheduleItem>>> {
+private fun scheduleGroups(entries: List<ScheduleEntry>, postseasonName: String): List<Pair<String, List<ScheduleItem>>> {
     val regular = entries.filter { it.seasonType == 2 }
     val playoffs = entries.filter { it.seasonType == 3 }
     val regularItems = buildList<ScheduleItem> {
@@ -430,7 +430,7 @@ private fun scheduleGroups(entries: List<ScheduleEntry>): List<Pair<String, List
     }
     return listOfNotNull(
         ("Regular season" to regularItems).takeIf { regularItems.isNotEmpty() },
-        ("Playoffs" to playoffs.map { ScheduleItem.Played(it) }).takeIf { playoffs.isNotEmpty() },
+        (postseasonName to playoffs.map { ScheduleItem.Played(it) }).takeIf { playoffs.isNotEmpty() },
     )
 }
 
@@ -445,7 +445,7 @@ private fun LazyListScope.scheduleItems(state: TeamUiState, onOpenGame: (Game) -
         }
         else -> {
             val nextId = schedule.entries.firstOrNull { it.game.status !is GameStatus.Final }?.game?.id
-            scheduleGroups(schedule.entries).forEach { (title, items) ->
+            scheduleGroups(schedule.entries, state.sport.postseasonName).forEach { (title, items) ->
                 item(key = "h_$title", contentType = "header") {
                     SectionHeader(
                         listOfNotNull(schedule.season?.let { state.sport.seasonName(it) }, title).joinToString(" "),

@@ -2,6 +2,7 @@ package com.sportshub.app.data
 
 import android.content.Context
 import android.util.LruCache
+import com.sportshub.app.data.espn.ClientError
 import com.sportshub.app.data.espn.EspnClient
 import com.sportshub.app.data.espn.EspnJson
 import com.sportshub.app.data.espn.EspnParser
@@ -63,12 +64,24 @@ class TeamRepository(context: Context, private val client: EspnClient) {
     fun peekTeams(sport: Sport): List<TeamListing>? = peek(key(sport, "teams", "all"))
 
     suspend fun cachedTeams(sport: Sport): List<TeamListing>? =
-        cached(key(sport, "teams", "all")) { EspnTeamParser.parseTeams(it).takeIf { l -> l.isNotEmpty() } }
+        cached(key(sport, "teams", "all")) { EspnTeamParser.parseTeams(it, sport).takeIf { l -> l.isNotEmpty() } }
 
     suspend fun teams(sport: Sport): Result<List<TeamListing>> =
-        fetch(key(sport, "teams", "all"), { client.teams(sport) }) { body ->
-            EspnTeamParser.parseTeams(body).also { require(it.isNotEmpty()) { "no teams" } }
+        fetch(key(sport, "teams", "all"), { if (sport.isCollegeFootball) collegeTeams(sport) else client.teams(sport) }) { body ->
+            EspnTeamParser.parseTeams(body, sport).also { require(it.isNotEmpty()) { "no teams" } }
         }
+
+    /**
+     * College teams: the FBS list is the small download. If it's missing any of the top
+     * conferences' teams (ESPN pages long lists), fall back to every team, filtered on our side.
+     */
+    private suspend fun collegeTeams(sport: Sport): String {
+        val fbs = resultOf { client.teams(sport, "groups=${CollegeFootball.FBS_GROUP}&limit=200") }.getOrNull()
+        val found = fbs?.let { body ->
+            withContext(Dispatchers.Default) { resultOf { EspnTeamParser.parseTeams(body, sport).size }.getOrNull() }
+        } ?: 0
+        return if (fbs != null && found >= CollegeFootball.teamIds.size) fbs else client.teams(sport, "limit=1000")
+    }
 
     /** A team from the league list, for its colors and logo when another source leaves them out. */
     fun teamInfo(sport: Sport, teamId: String): Team? = peekTeams(sport)?.firstOrNull { it.team.id == teamId }?.team
@@ -89,7 +102,12 @@ class TeamRepository(context: Context, private val client: EspnClient) {
         TeamPart.Profile -> client.team(sport, teamId)
         TeamPart.TeamStats -> client.teamStatistics(sport, teamId)
         TeamPart.Roster -> client.roster(sport, teamId)
-        TeamPart.Depth -> client.depthCharts(sport, teamId)
+        // Not every team has a depth chart on ESPN (many college teams don't): treat a 404 as none.
+        TeamPart.Depth -> try {
+            client.depthCharts(sport, teamId)
+        } catch (e: ClientError) {
+            if (e.code == 404) "{}" else throw e
+        }
         TeamPart.Schedule -> coroutineScope {
             // Regular season and playoffs come from separate requests; saved together as one.
             val regular = async { client.teamSchedule(sport, teamId, seasonType = 2) }

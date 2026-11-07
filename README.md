@@ -1,14 +1,15 @@
 # Sports Hub
 
-An Android sports app: live scores and stats, team pages, player profiles, plus a Watch tab for video sources you add yourself. NFL and NBA, with more sports planned. Switch sports from the chip in the top bar; the app remembers your pick.
+An Android sports app: live scores and stats, team pages, player profiles, plus a Watch tab for video sources you add yourself. NFL, college football and NBA, with more sports planned. Switch sports from the chip in the top bar; the app remembers your pick.
 
 ## Features
 
-- **Scores**: live, upcoming and final games, by week for the NFL and by day for the NBA (a strip of the season's game days). Tap a game for its box score.
+- **Scores**: live, upcoming and final games, by week for the NFL and college football and by day for the NBA (a strip of the season's game days). Tap a game for its box score.
 - **Your teams**: follow teams with the star on a team page, or from the card on Scores. Their games lead the Scores tab under "Your teams", with a strip showing each team's week at a glance (live score, result, kickoff or bye). Saved on the device only; no notifications.
 - **Game page**: score header in both teams' colors, scoring by quarter, a win probability chart, player stats per team (passing, rushing, receiving, defense, kicking; interceptions and fumbles are folded into those tables), and team stats.
 - **Win probability**: each team's chance play by play, shaded in team colors, with the plays that swung the game marked. Tap a marker or drag across the chart to read any play. Before kickoff (or tip-off), ESPN's matchup predictor shows instead.
 - **NBA games**: scoring by quarter and overtime, the box score split into starters and bench (minutes, points, rebounds and assists up front), team stats, the win probability chart with 3-pointers, dunks and turnovers marked, and the last play while live.
+- **College football**: the top of the sport only: the SEC, Big Ten, Big 12 and ACC, plus Notre Dame. A game shows when at least one side is one of those teams, so Ohio State against a smaller school is listed but two smaller schools aren't. Ranked teams carry their poll rank on score cards and game pages. Bowls and the playoff follow week 15 (conference championships). Teams are grouped by conference.
 - **Teams**: every team by division, your teams first. A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score (per-game averages and totals in the NBA), team season stats, the roster and the depth chart.
 - **Players**: tap a player anywhere for their bio (height, weight, age, college, draft) right under their name and photo, this season's numbers and career stats by year. Only the stat categories that fit their position show, unless they really play both ways.
 - **Compare**: two teams or two players side by side, stat by stat, with the better number in each row in that side's color and a tally of who's ahead. Open it from a team or player page, or the Teams tab. Team stats compare per game where ESPN gives it; players compare their latest season or whole career.
@@ -43,7 +44,7 @@ app/src/main/java/com/sportshub/app/
 - Team colors tint score cards and headers, adjusted so very dark or very light colors stay visible.
 - No loading flicker: everything already loaded is kept in memory and on disk, so pages draw in full on their first frame and refresh in place. While something loads for the first time, a placeholder of the same shape holds its place.
 
-Adding a sport means flipping `isAvailable` in `Sport.kt` and teaching the scores provider about it. The UI reads from the enum. Basketball's box scores and season stats are shaped in `data/BasketballStats.kt`, football's in `data/BoxScore.kt`; divisions live in `ui/team/TeamGroups.kt`.
+Adding a sport means flipping `isAvailable` in `Sport.kt` and teaching the scores provider about it. The UI reads from the enum. Basketball's box scores and season stats are shaped in `data/BasketballStats.kt`, football's in `data/BoxScore.kt`; divisions live in `ui/team/TeamGroups.kt`. The college conferences and their teams (by ESPN team id) live in `data/CollegeFootball.kt`; a school changing conferences is a one-line move there.
 
 ## Performance
 

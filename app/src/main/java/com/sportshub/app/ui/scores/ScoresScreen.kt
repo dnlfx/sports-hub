@@ -101,7 +101,7 @@ fun ScoresScreen(
 
     val board = state.board
     val subtitle = when {
-        board?.week != null && sport.hasWeeks -> if (board.seasonType == 3) "Playoffs" else "Week ${board.week}"
+        board?.week != null && sport.hasWeeks -> if (board.seasonType == 3) sport.postseasonName else "Week ${board.week}"
         // Sports played by day: the day being shown, which follows ESPN's game day.
         else -> (state.selectedDate ?: board?.date ?: LocalDate.now()).format(headerDate)
     }
