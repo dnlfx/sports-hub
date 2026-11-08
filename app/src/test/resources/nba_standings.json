@@ -1,0 +1,559 @@
+{
+ "uid": "x",
+ "id": "7",
+ "name": "National Basketball Association",
+ "abbreviation": "NBA",
+ "children": [
+  {
+   "id": "5",
+   "name": "Eastern Conference",
+   "abbreviation": "East",
+   "isConference": true,
+   "standings": {
+    "id": "0",
+    "name": "overall",
+    "displayName": "Standings",
+    "season": 2026,
+    "seasonType": 2,
+    "seasonDisplayName": "2026",
+    "entries": [
+     {
+      "team": {
+       "id": "15",
+       "uid": "s:20~t:15",
+       "location": "Milwaukee",
+       "name": "Bucks",
+       "abbreviation": "MIL",
+       "displayName": "Milwaukee Bucks",
+       "shortDisplayName": "Bucks",
+       "isActive": true,
+       "logos": []
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "gamesBehind",
+        "abbreviation": "GAM",
+        "type": "gamesbehind",
+        "value": 0.0,
+        "displayValue": "-"
+       },
+       {
+        "name": "losses",
+        "displayName": "losses",
+        "abbreviation": "LOS",
+        "type": "losses",
+        "value": 8.0,
+        "displayValue": "8"
+       },
+       {
+        "name": "playoffSeed",
+        "displayName": "playoffSeed",
+        "abbreviation": "PLA",
+        "type": "playoffseed",
+        "value": 15.0,
+        "displayValue": "15"
+       },
+       {
+        "name": "streak",
+        "displayName": "streak",
+        "abbreviation": "STR",
+        "type": "streak",
+        "value": 1.0,
+        "displayValue": "L5"
+       },
+       {
+        "name": "ties",
+        "displayName": "ties",
+        "abbreviation": "TIE",
+        "type": "ties",
+        "value": 0.0,
+        "displayValue": "0"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "winPercent",
+        "abbreviation": "WIN",
+        "type": "winpercent",
+        "value": 0.5,
+        "displayValue": ".500"
+       },
+       {
+        "name": "wins",
+        "displayName": "wins",
+        "abbreviation": "WIN",
+        "type": "wins",
+        "value": 1.0,
+        "displayValue": "1"
+       },
+       {
+        "name": "divisionRecord",
+        "displayName": "divisionRecord",
+        "abbreviation": "DIV",
+        "type": "divisionrecord",
+        "value": 0.0,
+        "displayValue": "1-1"
+       },
+       {
+        "id": "0",
+        "name": "overall",
+        "type": "total",
+        "summary": "1-8",
+        "displayValue": "1-8"
+       },
+       {
+        "id": "13",
+        "name": "Home",
+        "type": "home",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "17",
+        "name": "vs. Div.",
+        "type": "vsdiv",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "906",
+        "name": "vs. Conf.",
+        "type": "vsconf",
+        "summary": "2-2",
+        "displayValue": "2-2"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "4",
+       "uid": "s:20~t:4",
+       "location": "Chicago",
+       "name": "Bulls",
+       "abbreviation": "CHI",
+       "displayName": "Chicago Bulls",
+       "shortDisplayName": "Bulls",
+       "isActive": true,
+       "logos": []
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "gamesBehind",
+        "abbreviation": "GAM",
+        "type": "gamesbehind",
+        "value": 0.0,
+        "displayValue": "-"
+       },
+       {
+        "name": "losses",
+        "displayName": "losses",
+        "abbreviation": "LOS",
+        "type": "losses",
+        "value": 6.0,
+        "displayValue": "6"
+       },
+       {
+        "name": "playoffSeed",
+        "displayName": "playoffSeed",
+        "abbreviation": "PLA",
+        "type": "playoffseed",
+        "value": 11.0,
+        "displayValue": "11"
+       },
+       {
+        "name": "streak",
+        "displayName": "streak",
+        "abbreviation": "STR",
+        "type": "streak",
+        "value": 1.0,
+        "displayValue": "W1"
+       },
+       {
+        "name": "ties",
+        "displayName": "ties",
+        "abbreviation": "TIE",
+        "type": "ties",
+        "value": 0.0,
+        "displayValue": "0"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "winPercent",
+        "abbreviation": "WIN",
+        "type": "winpercent",
+        "value": 0.5,
+        "displayValue": ".500"
+       },
+       {
+        "name": "wins",
+        "displayName": "wins",
+        "abbreviation": "WIN",
+        "type": "wins",
+        "value": 3.0,
+        "displayValue": "3"
+       },
+       {
+        "name": "divisionRecord",
+        "displayName": "divisionRecord",
+        "abbreviation": "DIV",
+        "type": "divisionrecord",
+        "value": 0.0,
+        "displayValue": "1-1"
+       },
+       {
+        "id": "0",
+        "name": "overall",
+        "type": "total",
+        "summary": "3-6",
+        "displayValue": "3-6"
+       },
+       {
+        "id": "13",
+        "name": "Home",
+        "type": "home",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "17",
+        "name": "vs. Div.",
+        "type": "vsdiv",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "906",
+        "name": "vs. Conf.",
+        "type": "vsconf",
+        "summary": "2-2",
+        "displayValue": "2-2"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "8",
+       "uid": "s:20~t:8",
+       "location": "Detroit",
+       "name": "Pistons",
+       "abbreviation": "DET",
+       "displayName": "Detroit Pistons",
+       "shortDisplayName": "Pistons",
+       "isActive": true,
+       "logos": []
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "gamesBehind",
+        "abbreviation": "GAM",
+        "type": "gamesbehind",
+        "value": 0.0,
+        "displayValue": "-"
+       },
+       {
+        "name": "losses",
+        "displayName": "losses",
+        "abbreviation": "LOS",
+        "type": "losses",
+        "value": 6.0,
+        "displayValue": "6"
+       },
+       {
+        "name": "playoffSeed",
+        "displayName": "playoffSeed",
+        "abbreviation": "PLA",
+        "type": "playoffseed",
+        "value": 10.0,
+        "displayValue": "10"
+       },
+       {
+        "name": "streak",
+        "displayName": "streak",
+        "abbreviation": "STR",
+        "type": "streak",
+        "value": 1.0,
+        "displayValue": "W1"
+       },
+       {
+        "name": "ties",
+        "displayName": "ties",
+        "abbreviation": "TIE",
+        "type": "ties",
+        "value": 0.0,
+        "displayValue": "0"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "winPercent",
+        "abbreviation": "WIN",
+        "type": "winpercent",
+        "value": 0.5,
+        "displayValue": ".500"
+       },
+       {
+        "name": "wins",
+        "displayName": "wins",
+        "abbreviation": "WIN",
+        "type": "wins",
+        "value": 3.0,
+        "displayValue": "3"
+       },
+       {
+        "name": "divisionRecord",
+        "displayName": "divisionRecord",
+        "abbreviation": "DIV",
+        "type": "divisionrecord",
+        "value": 0.0,
+        "displayValue": "1-1"
+       },
+       {
+        "id": "0",
+        "name": "overall",
+        "type": "total",
+        "summary": "3-6",
+        "displayValue": "3-6"
+       },
+       {
+        "id": "13",
+        "name": "Home",
+        "type": "home",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "17",
+        "name": "vs. Div.",
+        "type": "vsdiv",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "906",
+        "name": "vs. Conf.",
+        "type": "vsconf",
+        "summary": "2-2",
+        "displayValue": "2-2"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "5",
+       "uid": "s:20~t:5",
+       "location": "Cleveland",
+       "name": "Cavaliers",
+       "abbreviation": "CLE",
+       "displayName": "Cleveland Cavaliers",
+       "shortDisplayName": "Cavaliers",
+       "isActive": true,
+       "logos": []
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "gamesBehind",
+        "abbreviation": "GAM",
+        "type": "gamesbehind",
+        "value": 0.0,
+        "displayValue": "-"
+       },
+       {
+        "name": "losses",
+        "displayName": "losses",
+        "abbreviation": "LOS",
+        "type": "losses",
+        "value": 5.0,
+        "displayValue": "5"
+       },
+       {
+        "name": "playoffSeed",
+        "displayName": "playoffSeed",
+        "abbreviation": "PLA",
+        "type": "playoffseed",
+        "value": 7.0,
+        "displayValue": "7"
+       },
+       {
+        "name": "streak",
+        "displayName": "streak",
+        "abbreviation": "STR",
+        "type": "streak",
+        "value": 1.0,
+        "displayValue": "W1"
+       },
+       {
+        "name": "ties",
+        "displayName": "ties",
+        "abbreviation": "TIE",
+        "type": "ties",
+        "value": 0.0,
+        "displayValue": "0"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "winPercent",
+        "abbreviation": "WIN",
+        "type": "winpercent",
+        "value": 0.5,
+        "displayValue": ".500"
+       },
+       {
+        "name": "wins",
+        "displayName": "wins",
+        "abbreviation": "WIN",
+        "type": "wins",
+        "value": 5.0,
+        "displayValue": "5"
+       },
+       {
+        "name": "divisionRecord",
+        "displayName": "divisionRecord",
+        "abbreviation": "DIV",
+        "type": "divisionrecord",
+        "value": 0.0,
+        "displayValue": "1-1"
+       },
+       {
+        "id": "0",
+        "name": "overall",
+        "type": "total",
+        "summary": "5-5",
+        "displayValue": "5-5"
+       },
+       {
+        "id": "13",
+        "name": "Home",
+        "type": "home",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "17",
+        "name": "vs. Div.",
+        "type": "vsdiv",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "906",
+        "name": "vs. Conf.",
+        "type": "vsconf",
+        "summary": "2-2",
+        "displayValue": "2-2"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "11",
+       "uid": "s:20~t:11",
+       "location": "Indiana",
+       "name": "Pacers",
+       "abbreviation": "IND",
+       "displayName": "Indiana Pacers",
+       "shortDisplayName": "Pacers",
+       "isActive": true,
+       "logos": []
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "displayName": "gamesBehind",
+        "abbreviation": "GAM",
+        "type": "gamesbehind",
+        "value": 0.0,
+        "displayValue": "-"
+       },
+       {
+        "name": "losses",
+        "displayName": "losses",
+        "abbreviation": "LOS",
+        "type": "losses",
+        "value": 4.0,
+        "displayValue": "4"
+       },
+       {
+        "name": "playoffSeed",
+        "displayName": "playoffSeed",
+        "abbreviation": "PLA",
+        "type": "playoffseed",
+        "value": 5.0,
+        "displayValue": "5"
+       },
+       {
+        "name": "streak",
+        "displayName": "streak",
+        "abbreviation": "STR",
+        "type": "streak",
+        "value": 1.0,
+        "displayValue": "W1"
+       },
+       {
+        "name": "ties",
+        "displayName": "ties",
+        "abbreviation": "TIE",
+        "type": "ties",
+        "value": 0.0,
+        "displayValue": "0"
+       },
+       {
+        "name": "winPercent",
+        "displayName": "winPercent",
+        "abbreviation": "WIN",
+        "type": "winpercent",
+        "value": 0.5,
+        "displayValue": ".500"
+       },
+       {
+        "name": "wins",
+        "displayName": "wins",
+        "abbreviation": "WIN",
+        "type": "wins",
+        "value": 6.0,
+        "displayValue": "6"
+       },
+       {
+        "name": "divisionRecord",
+        "displayName": "divisionRecord",
+        "abbreviation": "DIV",
+        "type": "divisionrecord",
+        "value": 0.0,
+        "displayValue": "1-1"
+       },
+       {
+        "id": "0",
+        "name": "overall",
+        "type": "total",
+        "summary": "6-4",
+        "displayValue": "6-4"
+       },
+       {
+        "id": "13",
+        "name": "Home",
+        "type": "home",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "17",
+        "name": "vs. Div.",
+        "type": "vsdiv",
+        "summary": "1-1",
+        "displayValue": "1-1"
+       },
+       {
+        "id": "906",
+        "name": "vs. Conf.",
+        "type": "vsconf",
+        "summary": "2-2",
+        "displayValue": "2-2"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

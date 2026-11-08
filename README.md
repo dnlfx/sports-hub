@@ -10,7 +10,7 @@ An Android sports app: live scores and stats, team pages, player profiles, plus 
 - **Win probability**: each team's chance play by play, shaded in team colors, with the plays that swung the game marked. Tap a marker or drag across the chart to read any play. Before kickoff (or tip-off), ESPN's matchup predictor shows instead.
 - **NBA games**: scoring by quarter and overtime, the box score split into starters and bench (minutes, points, rebounds and assists up front), team stats, the win probability chart with 3-pointers, dunks and turnovers marked, and the last play while live.
 - **College football**: the top of the sport only: the SEC, Big Ten, Big 12 and ACC, plus Notre Dame. A game shows when at least one side is one of those teams, so Ohio State against a smaller school is listed but two smaller schools aren't. Ranked teams carry their poll rank on score cards and game pages. Bowls and the playoff follow week 15 (conference championships). Teams are grouped by conference.
-- **Teams**: every team by division, your teams first. A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score (per-game averages and totals in the NBA), team season stats, the roster and the depth chart.
+- **Teams**: the standings, a card per division (per conference in college football) with each team's rank, record, games behind and streak, the leader marked. College conferences rank by conference record. Your teams lead the page with their place in their division, and pills narrow it to one conference (AFC or NFC, East or West). A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score (per-game averages and totals in the NBA), team season stats, the roster and the depth chart.
 - **Players**: tap a player anywhere for their bio (height, weight, age, college, draft) right under their name and photo, this season's numbers and career stats by year. Only the stat categories that fit their position show, unless they really play both ways.
 - **Compare**: two teams or two players side by side, stat by stat, with the better number in each row in that side's color and a tally of who's ahead. Open it from a team or player page, or the Teams tab. Team stats compare per game where ESPN gives it; players compare their latest season or whole career.
 
@@ -38,7 +38,7 @@ app/src/main/java/com/sportshub/app/
 - Game, team and player pages open with a full-width header in the team's colors.
 - Barlow Condensed for titles and scores, with tabular figures so digits don't shift. Inter for names, labels, stats and body text,
   bundled as one small variable font (Latin, weights 400 to 800). Both are under the SIL Open Font License (`licenses/`).
-- Large screens: game cards keep a readable width in the middle, and the Teams grid adds columns on tablets, foldables and in landscape.
+- Large screens: game cards keep a readable width in the middle, and the Teams standings sit side by side on tablets and foldables, with more columns (win percentage, division record) when a card has room.
 - Accessibility: tabs announce their selected state, a game card reads as one sentence ("Live. Bills 24, Jets 17. Q3 4:12."), and team logos next to a team's name stay silent so names aren't read twice.
 - Each tab has a large title that collapses on scroll, with the sport switcher in the top bar.
 - Team colors tint score cards and headers, adjusted so very dark or very light colors stay visible.

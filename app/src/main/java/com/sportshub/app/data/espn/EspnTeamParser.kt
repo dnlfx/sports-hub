@@ -16,6 +16,7 @@ import com.sportshub.app.model.TeamListing
 import com.sportshub.app.model.TeamProfile
 import com.sportshub.app.model.TeamSchedule
 import com.sportshub.app.model.TeamSeasonStats
+import com.sportshub.app.model.TeamStanding
 import kotlinx.serialization.json.JsonObject
 import java.util.Locale
 
@@ -37,6 +38,54 @@ object EspnTeamParser {
             if (sport?.isCollegeFootball == true && !CollegeFootball.isTopTeam(team.id)) return@mapNotNull null
             TeamListing(team, t.str("displayName") ?: team.name)
         }
+    }
+
+    /**
+     * Every team's line in the standings, by team id. ESPN nests groups (league, conference,
+     * division) to different depths per league, so this walks them all and reads each group
+     * that has entries. Stats are read by their type, since names repeat (college lists
+     * "wins" both overall and against the conference).
+     */
+    fun parseStandings(body: String): Map<String, TeamStanding> {
+        val root = EspnJson.parseToJsonElement(body).obj ?: return emptyMap()
+        val out = LinkedHashMap<String, TeamStanding>()
+        fun walk(node: JsonObject) {
+            node.obj("standings")?.arr("entries").orEmpty().forEachIndexed { index, e ->
+                val entry = e.obj ?: return@forEachIndexed
+                val id = entry.obj("team")?.str("id") ?: return@forEachIndexed
+                if (id !in out) standingOf(id, entry, index)?.let { out[id] = it }
+            }
+            node.arr("children").orEmpty().forEach { child -> child.obj?.let(::walk) }
+        }
+        walk(root)
+        return out
+    }
+
+    private fun standingOf(teamId: String, entry: JsonObject, order: Int): TeamStanding? {
+        val stats = entry.arr("stats").orEmpty().mapNotNull { it.obj }
+        fun stat(type: String) = stats.firstOrNull { (it.str("type") ?: it.str("name"))?.lowercase() == type }
+        fun count(type: String) = stat(type)?.double("value")?.toInt()
+        fun record(vararg types: String) = types.firstNotNullOfOrNull { t ->
+            stat(t)?.let { it.str("summary") ?: it.str("displayValue") }?.takeIf { r -> r.isNotBlank() && r.any(Char::isDigit) }
+        }
+        val overall = record("total")
+        // Counts first; the overall summary fills in if ESPN leaves them out.
+        val parts = overall?.split("-")?.map { it.trim().toIntOrNull() }
+        val wins = count("wins") ?: parts?.getOrNull(0) ?: return null
+        val losses = count("losses") ?: parts?.getOrNull(1) ?: return null
+        val ties = count("ties") ?: parts?.getOrNull(2) ?: 0
+        return TeamStanding(
+            teamId = teamId,
+            wins = wins,
+            losses = losses,
+            ties = ties,
+            overall = overall,
+            division = record("vsdiv", "divisionrecord"),
+            conference = record("vsconf"),
+            streak = stat("streak")?.str("displayValue")?.takeIf { it.isNotBlank() && it != "-" },
+            seed = count("playoffseed")?.takeIf { it > 0 },
+            order = order,
+        )
     }
 
     fun parseTeamProfile(body: String): TeamProfile? {

@@ -22,6 +22,7 @@ import com.sportshub.app.model.TeamPlayerStats
 import com.sportshub.app.model.TeamProfile
 import com.sportshub.app.model.TeamSchedule
 import com.sportshub.app.model.TeamSeasonStats
+import com.sportshub.app.model.TeamStanding
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Dispatchers
@@ -82,6 +83,17 @@ class TeamRepository(context: Context, private val client: EspnClient) {
         } ?: 0
         return if (fbs != null && found >= CollegeFootball.teamIds.size) fbs else client.teams(sport, "limit=1000")
     }
+
+    /** The league standings by team id. Empty only if ESPN listed nobody, which fails the load. */
+    fun peekStandings(sport: Sport): Map<String, TeamStanding>? = peek(key(sport, "standings", "all"))
+
+    suspend fun cachedStandings(sport: Sport): Map<String, TeamStanding>? =
+        cached(key(sport, "standings", "all")) { EspnTeamParser.parseStandings(it).takeIf { m -> m.isNotEmpty() } }
+
+    suspend fun standings(sport: Sport): Result<Map<String, TeamStanding>> =
+        fetch(key(sport, "standings", "all"), { client.standings(sport) }) { body ->
+            EspnTeamParser.parseStandings(body).also { require(it.isNotEmpty()) { "no standings" } }
+        }
 
     /** A team from the league list, for its colors and logo when another source leaves them out. */
     fun teamInfo(sport: Sport, teamId: String): Team? = peekTeams(sport)?.firstOrNull { it.team.id == teamId }?.team
