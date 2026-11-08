@@ -19,6 +19,7 @@ import okhttp3.Request
 class EspnClient(private val http: OkHttpClient) {
     private val base = "https://site.api.espn.com/apis/site/v2/sports"
     private val webBase = "https://site.web.api.espn.com/apis/common/v3/sports"
+    private val standingsBase = "https://site.api.espn.com/apis/v2/sports"
 
     suspend fun scoreboard(
         sport: Sport,
@@ -66,6 +67,20 @@ class EspnClient(private val http: OkHttpClient) {
 
     suspend fun depthCharts(sport: Sport, teamId: String): String =
         get("$base/${sport.espnPath}/teams/$teamId/depthcharts")
+
+    /**
+     * The league standings. NFL standings come by division, in division order; the NBA's by
+     * conference; college by conference across all of FBS. Always checked with the server,
+     * since they change with every final score.
+     */
+    suspend fun standings(sport: Sport): String {
+        val query = when {
+            sport == Sport.NFL -> "?level=3"
+            sport.isCollegeFootball -> "?group=${CollegeFootball.FBS_GROUP}"
+            else -> ""
+        }
+        return get("$standingsBase/${sport.espnPath}/standings$query", live = true)
+    }
 
     /** A player's bio and headline stats. */
     suspend fun athlete(sport: Sport, athleteId: String): String = get("$webBase/${sport.espnPath}/athletes/$athleteId")

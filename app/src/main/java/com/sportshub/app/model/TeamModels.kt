@@ -138,3 +138,28 @@ data class CareerTable(
     val seasons: List<CareerRow>,
     val totals: CareerRow?,
 )
+
+/**
+ * A team's line in the league standings. Records are "W-L" or "W-L-T" summaries.
+ * [order] is the team's place in ESPN's own listing, used to settle ties the same way ESPN does.
+ */
+@Immutable
+data class TeamStanding(
+    val teamId: String,
+    val wins: Int,
+    val losses: Int,
+    val ties: Int = 0,
+    /** Overall record, e.g. "7-2". */
+    val overall: String? = null,
+    /** Record against the team's own division, e.g. "3-1". */
+    val division: String? = null,
+    /** Record in conference games, e.g. "4-1". What college conference standings are ranked by. */
+    val conference: String? = null,
+    /** e.g. "W3" or "L1". */
+    val streak: String? = null,
+    /** Playoff seed in the conference, which already has the league's tie-breakers applied. */
+    val seed: Int? = null,
+    val order: Int = 0,
+) {
+    val gamesPlayed: Int get() = wins + losses + ties
+}
