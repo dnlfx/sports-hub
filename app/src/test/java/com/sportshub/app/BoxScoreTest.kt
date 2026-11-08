@@ -68,4 +68,54 @@ class BoxScoreTest {
         // A perfect line caps at 158.3.
         assertEquals(158.3, BoxScore.passerRating(20.0, 20.0, 400.0, 5.0, 0.0), 0.05)
     }
+
+    private val defenseColumns = listOf("TOT", "SOLO", "SACKS", "TFL", "PD", "QB HTS", "TD")
+
+    @Test fun gameDropsOffensivePlayersStrayTackles() {
+        val defense = t(
+            "defensive", defenseColumns,
+            p("lb", "9", "6", "1", "2", "0", "1", "0"),
+            // Tackled the man who picked him off.
+            p("qb", "1", "1", "0", "0", "0", "0", "0"),
+            p("wr", "2", "1", "0", "0", "0", "0", "0"),
+            // Tackle on a kick return.
+            p("k", "1", "1", "0", "0", "0", "0", "0"),
+        )
+        val shown = BoxScore.relevantRows(listOf(passing, rushing, receiving, defense, kicking), perGame = true)
+        assertEquals(listOf("lb"), shown.first { it.key == "defensive" }.players.map { it.athleteId })
+        // Offense tables are untouched.
+        assertEquals(listOf("rb", "qb"), shown.first { it.key == "rushing" }.players.map { it.athleteId })
+    }
+
+    @Test fun gameKeepsTwoWayPlayers() {
+        val defense = t(
+            "defensive", defenseColumns,
+            // Six catches and a pass breakup at corner.
+            p("wr", "1", "1", "0", "0", "1", "0", "0"),
+        )
+        val fakePunt = t("rushing", rushing.columns, p("lb", "1", "12", "12.0", "0", "12"))
+        val lbDefense = t("defensive", defenseColumns, p("lb", "9", "6", "1", "2", "0", "1", "0"))
+        assertEquals(1, BoxScore.relevantRows(listOf(receiving, defense), perGame = true).first { it.key == "defensive" }.players.size)
+        // A defender's carry on a fake punt is a real play in that game.
+        assertEquals(listOf("lb"), BoxScore.relevantRows(listOf(fakePunt, lbDefense), perGame = true).first { it.key == "rushing" }.players.map { it.athleteId })
+    }
+
+    @Test fun seasonNeedsARealRoleOnTheOtherSide() {
+        val catches = t("receiving", receiving.columns, p("wr", "60", "800", "13.3", "6", "50", "90"), p("hunter", "28", "298", "10.6", "1", "44", "45"))
+        val defense = t(
+            "defensive", defenseColumns,
+            p("wr", "5", "4", "0", "0", "0", "0", "0"),
+            p("hunter", "15", "11", "0", "0", "3", "0", "0"),
+            p("lb", "90", "60", "4", "9", "2", "8", "0"),
+        )
+        val carries = t("rushing", rushing.columns, p("lb", "1", "12", "12.0", "0", "12"), p("rb", "200", "900", "4.5", "8", "40"))
+        val shown = BoxScore.relevantRows(listOf(catches, carries, defense), perGame = false)
+        assertEquals(listOf("hunter", "lb"), shown.first { it.key == "defensive" }.players.map { it.athleteId })
+        assertEquals(listOf("rb"), shown.first { it.key == "rushing" }.players.map { it.athleteId })
+    }
+
+    @Test fun basketballTablesAreLeftAlone() {
+        val players = t("players", listOf("MIN", "PTS"), p("a", "30", "20"))
+        assertEquals(listOf(players), BoxScore.relevantRows(listOf(players), perGame = true))
+    }
 }

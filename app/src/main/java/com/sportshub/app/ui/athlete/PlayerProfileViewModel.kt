@@ -24,7 +24,7 @@ data class PlayerProfileUiState(
 
 class PlayerProfileViewModel(
     private val repository: TeamRepository,
-    private val sport: Sport,
+    val sport: Sport,
     private val athleteId: String,
     ref: PlayerRef?,
 ) : ViewModel() {

@@ -71,6 +71,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.sportshub.app.data.BoxScore
 import com.sportshub.app.model.Competitor
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.GameStatus
@@ -113,6 +114,13 @@ fun GameDetailScreen(
                 detail?.playerStats.orEmpty().flatMap { team -> team.tables.flatMap { t -> t.players.map { it.headshotUrl } } }
         },
     )
+    // Each player only in the tables for the side of the ball they played this game.
+    val boxScore = remember(state.detail?.playerStats) {
+        state.detail?.playerStats.orEmpty().map { team ->
+            val tables = BoxScore.relevantRows(team.tables, perGame = true)
+            if (tables == team.tables) team else team.copy(tables = tables)
+        }
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { viewModel.pollWhileVisible() }
@@ -173,7 +181,7 @@ fun GameDetailScreen(
                     }
 
                     val leaders = detail?.leaders.orEmpty()
-                    val playerStats = detail?.playerStats.orEmpty()
+                    val playerStats = boxScore
                     if (game.status == GameStatus.Scheduled) {
                         // Before the game, ESPN's leaders are each team's season leaders.
                         when {
