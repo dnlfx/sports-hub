@@ -1,5 +1,11 @@
 package com.sportshub.app.ui.scores
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -49,6 +55,10 @@ private val HeaderHeight = 30.dp
  * Box score for a live or finished game, as list items: a card with a switch between
  * the two teams, then one card per table for that team (passing, rushing, receiving,
  * defense, kicking). Separate items let the list build only the tables on screen.
+ *
+ * Swiping sideways on any of these cards switches teams too, so the pills don't have
+ * to be in view. Tables keep their place in the list when the team changes, so after
+ * a swipe on the rushing table you're looking at the other team's rushing.
  */
 fun LazyListScope.playerStatsItems(
     stats: List<TeamPlayerStats>,
@@ -62,9 +72,11 @@ fun LazyListScope.playerStatsItems(
         ?: teams.firstOrNull { t -> stats.any { it.teamId == t.id } }
         ?: game.away.team
     val tables = stats.firstOrNull { it.teamId == selected.id }?.tables.orEmpty()
+    val selectedIndex = teams.indexOf(selected)
+    val onSwipe: (Int) -> Unit = { step -> teams.getOrNull(selectedIndex + step)?.let { onSelectTeam(it.id) } }
 
     item(key = "players", contentType = "players_header") {
-        Section("Player stats") {
+        Section("Player stats", modifier = rememberTeamSwipe(onSwipe)) {
             TeamSwitch(teams, selected.id, onSelectTeam)
             if (tables.isEmpty()) {
                 Spacer(Modifier.height(16.dp))
@@ -76,9 +88,39 @@ fun LazyListScope.playerStatsItems(
             }
         }
     }
-    items(tables, key = { "table_${selected.id}_${it.key}" }, contentType = { "stat_table" }) { table ->
-        Section(table.title, trailing = { TeamLogo(selected, size = 24.dp, contentDescription = selected.name) }) {
-            StatTable(table, onOpenPlayer = { onOpenPlayer(it.copy(team = selected)) })
+    // Keyed by table, not team, so switching teams swaps each card in place instead of
+    // replacing them all and losing the reader's spot.
+    items(tables, key = { "table_${it.key}" }, contentType = { "stat_table" }) { table ->
+        TeamTableCard(TeamTable(selected, table), teams, rememberTeamSwipe(onSwipe), onOpenPlayer)
+    }
+}
+
+@Immutable
+private data class TeamTable(val team: Team, val table: PlayerStatTable)
+
+/** One box score table, sliding the other team's in from the side it was swiped from. */
+@Composable
+private fun TeamTableCard(
+    current: TeamTable,
+    teams: List<Team>,
+    modifier: Modifier,
+    onOpenPlayer: (PlayerRef) -> Unit,
+) {
+    AnimatedContent(
+        targetState = current,
+        modifier = modifier,
+        // Live updates to the same team's numbers swap in place; only a team change slides.
+        contentKey = { it.team.id },
+        transitionSpec = {
+            fun position(team: Team) = teams.indexOfFirst { it.id == team.id }
+            val sign = if (position(targetState.team) > position(initialState.team)) 1 else -1
+            (slideInHorizontally { sign * it / 4 } + fadeIn())
+                .togetherWith(slideOutHorizontally { -sign * it / 4 } + fadeOut())
+        },
+        label = "team table",
+    ) { (team, table) ->
+        Section(table.title, trailing = { TeamLogo(team, size = 24.dp, contentDescription = team.name) }) {
+            StatTable(table, onOpenPlayer = { onOpenPlayer(it.copy(team = team)) })
         }
     }
 }
