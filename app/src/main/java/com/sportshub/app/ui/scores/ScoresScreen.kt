@@ -57,13 +57,15 @@ import com.sportshub.app.model.Team
 import com.sportshub.app.ui.components.EmptyState
 import com.sportshub.app.ui.components.LargeHeaderBar
 import com.sportshub.app.ui.components.Pill
+import com.sportshub.app.ui.components.PrefetchImages
 import com.sportshub.app.ui.components.SectionHeader
 import com.sportshub.app.ui.components.SportMenuButton
 import com.sportshub.app.ui.components.bottomListPadding
 import com.sportshub.app.ui.components.icon
 import com.sportshub.app.ui.favorites.FavoriteTeamsSheet
 import com.sportshub.app.ui.favorites.FollowPrompt
-import com.sportshub.app.ui.favorites.YourTeamsStrip
+import com.sportshub.app.ui.favorites.IdleTeamsCard
+import com.sportshub.app.ui.favorites.idleTeams
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -100,6 +102,10 @@ fun ScoresScreen(
     }
 
     val board = state.board
+    // Followed teams' logos start downloading on launch, alongside the scores, then every
+    // logo on the slate, so cards further down are ready before they scroll into view.
+    PrefetchImages(remember(favoriteTeams) { favoriteTeams.map { it.logoUrl } })
+    PrefetchImages(remember(board?.games) { board?.games.orEmpty().flatMap { listOf(it.home.team.logoUrl, it.away.team.logoUrl) } })
     val subtitle = when {
         board?.week != null && sport.hasWeeks -> if (board.seasonType == 3) sport.postseasonName else "Week ${board.week}"
         // Sports played by day: the day being shown, which follows ESPN's game day.
@@ -241,7 +247,8 @@ private fun LazyListScope.gameSections(
     onOpenTeam: (Team) -> Unit,
     onEditFavorites: () -> Unit,
 ) {
-    // The user's teams lead: a strip with each team's week at a glance, then their games.
+    // The user's teams lead, each one once: a full card for every game they play, then
+    // one compact card for any team that isn't playing (a bye, or no game that day).
     if (favorites.isNotEmpty()) {
         item(key = "section_$YOUR_TEAMS_SECTION", contentType = "section") {
             SectionHeader(
@@ -249,9 +256,6 @@ private fun LazyListScope.gameSections(
                 modifier = Modifier.animateItem(),
                 trailing = { TextButton(onClick = onEditFavorites) { Text("Edit") } },
             )
-        }
-        item(key = "your_teams_strip", contentType = "strip") {
-            YourTeamsStrip(favorites, board, onOpenTeam, Modifier.animateItem())
         }
         val mine = sections.firstOrNull { it.key == YOUR_TEAMS_SECTION }?.games.orEmpty()
         items(mine, key = { it.id }, contentType = { "game" }) { game ->
@@ -262,6 +266,18 @@ private fun LazyListScope.gameSections(
                     .padding(horizontal = 16.dp)
                     .animateItem(),
             )
+        }
+        val idle = idleTeams(favorites, board)
+        if (idle.isNotEmpty()) {
+            item(key = "your_teams_idle", contentType = "idle_teams") {
+                IdleTeamsCard(
+                    idle,
+                    onOpenTeam = onOpenTeam,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .animateItem(),
+                )
+            }
         }
     }
     sections.filter { it.key != YOUR_TEAMS_SECTION }.forEach { section ->

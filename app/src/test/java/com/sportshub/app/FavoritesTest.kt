@@ -7,8 +7,7 @@ import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Sport
 import com.sportshub.app.model.Team
-import com.sportshub.app.ui.favorites.WeekTone
-import com.sportshub.app.ui.favorites.teamWeeks
+import com.sportshub.app.ui.favorites.idleTeams
 import com.sportshub.app.ui.scores.YOUR_TEAMS_SECTION
 import com.sportshub.app.ui.scores.sectionsOf
 import org.junit.Assert.assertEquals
@@ -54,13 +53,18 @@ class FavoritesTest {
         assertEquals(board.games.size, sections.sumOf { it.games.size })
     }
 
-    @Test fun eachTeamsWeekAtAGlance() {
-        val weeks = teamWeeks(listOf(bills, jets), board)
-        assertEquals(listOf("2", "20"), weeks.map { it.team.id })
-        assertEquals(WeekTone.Won, weeks[0].tone)
-        assertEquals("W 27–20 vs MIA", weeks[0].status)
-        assertEquals("6-2", weeks[0].record)
-        assertEquals(WeekTone.Idle, weeks[1].tone)
-        assertEquals("Bye week", weeks[1].status)
+    @Test fun yourTeamsGamesFollowTheOrderTeamsWereFollowed() {
+        val sections = sectionsOf(board, favoriteIds = linkedSetOf("1", "2"))
+        assertEquals(listOf("2", "1"), sections.first().games.map { it.id })
+    }
+
+    @Test fun onlyTeamsWithoutAGameGetAnIdleRow() {
+        val idle = idleTeams(listOf(bills, jets), board)
+        assertEquals(listOf("20"), idle.map { it.team.id })
+        assertEquals("Bye week", idle.single().status)
+    }
+
+    @Test fun everyTeamPlayingMeansNoIdleRows() {
+        assertEquals(emptyList<Any>(), idleTeams(listOf(bills), board))
     }
 }

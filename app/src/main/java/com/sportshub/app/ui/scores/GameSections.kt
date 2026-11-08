@@ -18,7 +18,8 @@ private val dayFormat = DateTimeFormatter.ofPattern("EEEE, MMM d")
 const val YOUR_TEAMS_SECTION = "yours"
 
 /**
- * The games of the user's teams first (under "Your teams"), then the rest: live games,
+ * The games of the user's teams first (under "Your teams", in the order they were followed;
+ * [favoriteIds] should keep that order), then the rest: live games,
  * upcoming games grouped by day, then finals. A game shows up only once.
  */
 fun sectionsOf(
@@ -27,7 +28,12 @@ fun sectionsOf(
     today: LocalDate = LocalDate.now(zone),
     favoriteIds: Set<String> = emptySet(),
 ): List<GameSection> {
-    val (mine, games) = board.games.partition { it.home.team.id in favoriteIds || it.away.team.id in favoriteIds }
+    val (followed, games) = board.games.partition { it.home.team.id in favoriteIds || it.away.team.id in favoriteIds }
+    // In the order the user followed their teams, so their first team's game leads.
+    val order = favoriteIds.withIndex().associate { (i, id) -> id to i }
+    val mine = followed.sortedBy { game ->
+        minOf(order[game.home.team.id] ?: Int.MAX_VALUE, order[game.away.team.id] ?: Int.MAX_VALUE)
+    }
     val live = games.filter { it.status is GameStatus.Live }
     val upcomingByDay = games
         .filter { it.status == GameStatus.Scheduled }

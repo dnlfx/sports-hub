@@ -2,10 +2,8 @@ package com.sportshub.app.ui.favorites
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,153 +11,102 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.sportshub.app.model.GameStatus
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Team
 import com.sportshub.app.ui.components.TeamLogo
 import com.sportshub.app.ui.components.accentColor
 import com.sportshub.app.ui.components.cardSurface
-import com.sportshub.app.ui.scores.statusLabel
 import com.sportshub.app.ui.theme.SportsHubTheme
 
-/** How a followed team's week (or day, in the NBA) looks, for its tile on the Scores tab. */
+/** A followed team with no game on the slate being shown, e.g. on a bye. */
 @Immutable
-data class TeamWeek(val team: Team, val record: String?, val status: String, val tone: WeekTone)
-
-enum class WeekTone { Live, Won, Lost, Upcoming, Idle }
+data class IdleTeam(val team: Team, val status: String)
 
 /**
- * Each followed team's game on [board]: live score, result, start time, or a bye
- * (no game that day, in sports played by day).
- * Teams keep the order the user followed them in.
+ * The followed teams that have no game on [board], in the order the user followed them.
+ * Teams that do play show up as their full game card instead, so each team appears once.
  */
-fun teamWeeks(favorites: List<Team>, board: Scoreboard): List<TeamWeek> = favorites.map { team ->
-    val game = board.games.firstOrNull { it.home.team.id == team.id || it.away.team.id == team.id }
-    val side = game?.let { if (it.home.team.id == team.id) it.home else it.away }
-    val other = game?.let { if (it.home.team.id == team.id) it.away else it.home }
-    val known = side?.team
-    val shown = team.copy(
-        logoUrl = team.logoUrl ?: known?.logoUrl,
-        primaryColor = team.primaryColor ?: known?.primaryColor,
-    )
-    when {
-        game == null || side == null || other == null ->
-            TeamWeek(
-                shown,
-                null,
-                when {
-                    board.seasonType == 3 -> "Not playing"
-                    board.sport.hasWeeks -> "Bye week"
-                    else -> "No game"
-                },
-                WeekTone.Idle,
-            )
-        game.status is GameStatus.Live ->
-            TeamWeek(shown, known?.record, "Live ${side.score ?: 0}–${other.score ?: 0}", WeekTone.Live)
-        game.status is GameStatus.Final -> {
-            val won = side.isWinner || (side.score ?: 0) > (other.score ?: 0)
-            val tied = !side.isWinner && !other.isWinner && side.score == other.score
-            val letter = if (tied) "T" else if (won) "W" else "L"
-            TeamWeek(
-                shown,
-                known?.record,
-                "$letter ${side.score ?: 0}–${other.score ?: 0} ${if (game.home === side) "vs" else "@"} ${other.team.abbreviation}",
-                if (won) WeekTone.Won else if (tied) WeekTone.Idle else WeekTone.Lost,
-            )
-        }
-        else -> TeamWeek(
-            shown,
-            known?.record,
-            "${if (game.home === side) "vs" else "@"} ${other.team.abbreviation} · ${game.statusLabel()}",
-            WeekTone.Upcoming,
-        )
+fun idleTeams(favorites: List<Team>, board: Scoreboard): List<IdleTeam> {
+    val playing = board.games.flatMapTo(HashSet()) { listOf(it.home.team.id, it.away.team.id) }
+    val status = when {
+        board.seasonType == 3 -> "Not playing"
+        board.sport.hasWeeks -> "Bye week"
+        else -> "No game"
     }
+    return favorites.filter { it.id !in playing }.map { IdleTeam(it, status) }
 }
 
-/** A sideways strip with a tile per followed team. Tap a tile for the team's page. */
+/**
+ * One card listing the followed teams that aren't playing, a row each.
+ * Tap a row for the team's page.
+ */
 @Composable
-fun YourTeamsStrip(favorites: List<Team>, board: Scoreboard, onOpenTeam: (Team) -> Unit, modifier: Modifier = Modifier) {
-    val weeks = remember(favorites, board) { teamWeeks(favorites, board) }
-    LazyRow(
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        items(weeks, key = { it.team.id }) { week ->
-            TeamWeekTile(week, onClick = { onOpenTeam(week.team.copy(record = week.record)) })
+fun IdleTeamsCard(teams: List<IdleTeam>, onOpenTeam: (Team) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth().cardSurface()) {
+        teams.forEachIndexed { index, idle ->
+            if (index > 0) HorizontalDivider(Modifier.padding(start = 64.dp), color = SportsHubTheme.colors.stroke)
+            IdleTeamRow(idle, onClick = { onOpenTeam(idle.team) })
         }
     }
 }
 
 @Composable
-private fun TeamWeekTile(week: TeamWeek, onClick: () -> Unit) {
-    val color = week.team.accentColor()
-    val colors = SportsHubTheme.colors
-    val toneColor = when (week.tone) {
-        WeekTone.Live -> colors.live
-        WeekTone.Won -> colors.win
-        WeekTone.Lost -> colors.loss
-        WeekTone.Upcoming -> MaterialTheme.colorScheme.onSurface
-        WeekTone.Idle -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Column(
+private fun IdleTeamRow(idle: IdleTeam, onClick: () -> Unit) {
+    val color = idle.team.accentColor()
+    Row(
         Modifier
-            .width(150.dp)
-            .cardSurface(MaterialTheme.shapes.large)
-            .clickable(onClick = onClick)
-            .background(Brush.verticalGradient(listOf(color.copy(alpha = 0.24f), Color.Transparent)))
-            .padding(14.dp),
+            .fillMaxWidth()
+            .clickable(onClickLabel = "Open team", role = Role.Button, onClick = onClick)
+            .drawBehind {
+                drawRect(Brush.horizontalGradient(0f to color.copy(alpha = 0.14f), 0.4f to Color.Transparent, endX = size.width))
+            }
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TeamLogo(week.team, size = 36.dp)
-            Spacer(Modifier.weight(1f))
-            if (week.tone == WeekTone.Live) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(colors.live))
+        TeamLogo(idle.team, size = 34.dp)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                idle.team.name,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            idle.team.record?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        Spacer(Modifier.height(10.dp))
         Text(
-            week.team.name,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            week.record ?: " ",
-            style = MaterialTheme.typography.labelSmall,
+            idle.status,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
         )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            week.status,
-            style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
-            fontWeight = FontWeight.SemiBold,
-            color = toneColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        Icon(
+            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 2.dp).size(20.dp),
         )
     }
 }
