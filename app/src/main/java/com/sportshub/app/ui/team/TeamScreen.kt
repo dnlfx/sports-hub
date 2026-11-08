@@ -90,6 +90,7 @@ import com.sportshub.app.ui.components.LightStatusBarIcons
 import com.sportshub.app.ui.components.LiveBadge
 import com.sportshub.app.ui.components.PillTabs
 import com.sportshub.app.ui.components.PlayerHeadshot
+import com.sportshub.app.ui.components.PrefetchImages
 import com.sportshub.app.ui.components.SectionHeader
 import com.sportshub.app.ui.components.Tag
 import com.sportshub.app.ui.components.TeamLogo
@@ -137,6 +138,9 @@ fun TeamScreen(
     onCompare: (Team) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Headshots start downloading as soon as the roster arrives, before the Roster or
+    // Depth tab is opened, so they're already up when it is.
+    PrefetchImages(remember(state.roster) { state.roster.orEmpty().flatMap { group -> group.players.map { it.headshotUrl } } })
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { viewModel.pollWhileVisible() }

@@ -57,7 +57,7 @@ class ScoresViewModel(
     }
 
     private fun sectionsFor(board: Scoreboard, sport: Sport): List<GameSection> =
-        sectionsOf(board, favoriteIds = favorites.teams(sport).mapTo(HashSet()) { it.id })
+        sectionsOf(board, favoriteIds = favorites.teams(sport).mapTo(LinkedHashSet()) { it.id })
 
     /** Scores already in memory, shown on the first frame instead of a loading placeholder. */
     private fun startState(sport: Sport): ScoresUiState =

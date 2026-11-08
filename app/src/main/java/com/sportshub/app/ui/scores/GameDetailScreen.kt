@@ -80,6 +80,7 @@ import com.sportshub.app.model.TeamStatRow
 import com.sportshub.app.ui.components.EmptyState
 import com.sportshub.app.ui.components.LightStatusBarIcons
 import com.sportshub.app.ui.components.LiveBadge
+import com.sportshub.app.ui.components.PrefetchImages
 import com.sportshub.app.ui.components.TeamLogo
 import com.sportshub.app.ui.components.accentColor
 import com.sportshub.app.ui.components.bottomListPadding
@@ -104,6 +105,14 @@ fun GameDetailScreen(
     onOpenPlayer: (PlayerRef) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Leader and box score headshots start downloading as soon as the details arrive.
+    PrefetchImages(
+        remember(state.detail) {
+            val detail = state.detail
+            detail?.leaders.orEmpty().map { it.headshotUrl } +
+                detail?.playerStats.orEmpty().flatMap { team -> team.tables.flatMap { t -> t.players.map { it.headshotUrl } } }
+        },
+    )
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { viewModel.pollWhileVisible() }

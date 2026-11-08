@@ -11,6 +11,7 @@ import com.sportshub.app.data.SourcesRepository
 import com.sportshub.app.data.TeamRepository
 import com.sportshub.app.data.espn.EspnClient
 import com.sportshub.app.data.scan.PageScanner
+import com.sportshub.app.ui.components.NetworkOnlyCrossfade
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.PlayerRef
 import com.sportshub.app.model.Sport
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import okhttp3.Cache
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 
 /** Simple manual dependency container, created once in [SportsHubApp]. */
@@ -52,16 +54,23 @@ class AppContainer(context: Context) {
      */
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(appContext)
-            // Same connections and threads, but no HTTP cache: Coil keeps its own disk cache,
-            // so images would otherwise be stored twice.
-            .okHttpClient { http.newBuilder().cache(null).build() }
-            .crossfade(180)
+            .okHttpClient {
+                http.newBuilder()
+                    // No HTTP cache: Coil keeps its own disk cache, so images would otherwise be stored twice.
+                    .cache(null)
+                    // Every picture comes from one ESPN host, and OkHttp's default of 5 requests per
+                    // host left a screen of logos and headshots waiting in line. This lets a whole
+                    // screen's worth download at once, on its own queue so scores never wait behind images.
+                    .dispatcher(Dispatcher().apply { maxRequests = 64; maxRequestsPerHost = 24 })
+                    .build()
+            }
+            .transitionFactory(NetworkOnlyCrossfade(150))
             .respectCacheHeaders(false)
-            .memoryCache { MemoryCache.Builder(appContext).maxSizePercent(0.20).build() }
+            .memoryCache { MemoryCache.Builder(appContext).maxSizePercent(0.25).build() }
             .diskCache {
                 DiskCache.Builder()
                     .directory(appContext.cacheDir.resolve("images"))
-                    .maxSizeBytes(64L * 1024 * 1024)
+                    .maxSizeBytes(128L * 1024 * 1024)
                     .build()
             }
             .build()
