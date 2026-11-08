@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -34,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -244,11 +246,35 @@ fun PlayerProfileScreen(
 
             val career = relevantCareer
             when {
-                career == null && !state.careerFailed -> item(key = "career_skeleton") { SectionSkeleton("Career", rows = 5) }
-                career.isNullOrEmpty() -> Unit
+                career == null && state.careerFailed -> {
+                    // Only worth its own message when the rest of the page loaded.
+                    if (!state.profileFailed) {
+                        item(key = "career_failed") {
+                            Section("Career") {
+                                Text(
+                                    "Couldn't load career stats.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                TextButton(onClick = viewModel::retry, contentPadding = PaddingValues(0.dp)) { Text("Try again") }
+                            }
+                        }
+                    }
+                }
+                career == null -> item(key = "career_skeleton") { SectionSkeleton("Career", rows = 5) }
+                career.isEmpty() -> item(key = "career_empty") {
+                    val lineman = !viewModel.sport.isBasketball && position?.trim()?.uppercase() in linemen
+                    Section("Career") {
+                        Text(
+                            if (lineman) "Offensive linemen don't have stats of their own." else "No stats yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 else -> {
-                    val career = career.orEmpty()
-                    val season = career.firstNotNullOfOrNull { it.seasons.firstOrNull()?.label }
+                    // The newest season any category has, and every category played in it.
+                    val season = career.mapNotNull { it.seasons.firstOrNull()?.label }.maxOrNull()
                     val latest = career.filter { it.seasons.firstOrNull()?.label == season }
                     if (season != null && latest.isNotEmpty()) {
                         item(key = "season") { SeasonCard(season, latest) }
@@ -261,6 +287,9 @@ fun PlayerProfileScreen(
         }
     }
 }
+
+/** Football positions with no stats of their own in ESPN's tables. */
+private val linemen = setOf("OL", "OT", "OG", "T", "G", "C", "LT", "RT", "LG", "RG", "IOL")
 
 /** Height, age, college and the rest, two to a row on the header under the player's name. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -308,14 +337,37 @@ private fun HeroBioSkeleton() {
     }
 }
 
-/** The latest season in every category the player has stats in, as label and value pairs. */
+/**
+ * The latest season in every category the player has stats in, as label and value
+ * tiles. Games played shows once at the top rather than in every category.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SeasonCard(season: String, tables: List<CareerTable>) {
-    Section("$season season") {
+    val games = remember(tables) {
+        tables.firstNotNullOfOrNull { t ->
+            t.columns.indexOf("GP").takeIf { it >= 0 }?.let { t.seasons.first().values.getOrNull(it) }
+        }?.takeIf { it.toIntOrNull() != null }
+    }
+    Section(
+        "$season season",
+        trailing = if (games == null) {
+            null
+        } else {
+            {
+                Text(
+                    "$games game${if (games == "1") "" else "s"}",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             tables.forEach { table ->
                 val row = table.seasons.first()
+                val stats = table.columns.withIndex().filter { (_, label) -> label != "GP" }
+                if (stats.isEmpty()) return@forEach
                 Column {
                     Text(table.title.uppercase(), style = OverlineTextStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(8.dp))
@@ -323,9 +375,10 @@ private fun SeasonCard(season: String, tables: List<CareerTable>) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        table.columns.forEachIndexed { i, label ->
+                        stats.forEach { (i, label) ->
                             Column(
                                 Modifier
+                                    .widthIn(min = 64.dp)
                                     .clip(MaterialTheme.shapes.small)
                                     .background(SportsHubTheme.colors.cardHigh)
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -337,6 +390,7 @@ private fun SeasonCard(season: String, tables: List<CareerTable>) {
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
                                     style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
+                                    maxLines = 1,
                                 )
                                 Text(
                                     label,

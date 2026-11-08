@@ -31,4 +31,12 @@ class EspnPlayerParserTest {
         // Stray tabs in labels are trimmed.
         assertEquals(listOf("1-19"), career[1].columns)
     }
+
+    @Test fun repeatedLabelsAreNamedAfterTheColumnBefore() {
+        val labels = listOf("GP", "TOT", "FR", "YDS", "INT", "YDS", "AVG", "TD")
+        assertEquals(
+            listOf("GP", "TOT", "FR", "YDS", "INT", "INT YDS", "AVG", "TD"),
+            EspnPlayerParser.distinctLabels(labels),
+        )
+    }
 }

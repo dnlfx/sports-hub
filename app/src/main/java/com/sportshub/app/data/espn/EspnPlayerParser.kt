@@ -90,7 +90,7 @@ object EspnPlayerParser {
             val cat = c.obj ?: return@mapNotNull null
             val key = cat.str("name") ?: return@mapNotNull null
             if (key in skipped) return@mapNotNull null
-            val columns = cat.arr("labels").orEmpty().mapNotNull { it.primitiveString()?.trim() }
+            val columns = distinctLabels(cat.arr("labels").orEmpty().mapNotNull { it.primitiveString()?.trim() })
             if (columns.isEmpty()) return@mapNotNull null
             fun row(values: JsonArray?) = List(columns.size) { i -> values?.getOrNull(i)?.primitiveString() ?: "-" }
             val seasons = cat.arr("statistics").orEmpty().mapNotNull { s ->
@@ -107,11 +107,26 @@ object EspnPlayerParser {
             val totals = cat.arr("totals")?.let { CareerRow("Career", null, row(it)) }
             CareerTable(
                 key = key,
-                title = cat.str("displayName") ?: key.replaceFirstChar { it.uppercase() },
+                // Basketball: "Regular Season Averages" reads as just "Averages".
+                title = (cat.str("displayName")?.removePrefix("Regular Season ")?.replaceFirstChar { it.uppercase() })
+                    ?: key.replaceFirstChar { it.uppercase() },
                 columns = columns,
                 seasons = seasons,
                 totals = totals,
             )
+        }
+    }
+
+    /**
+     * Labels made unique, so each column can be told apart. ESPN's defense table has
+     * "YDS" twice; the one after "INT" becomes "INT YDS".
+     */
+    internal fun distinctLabels(labels: List<String>): List<String> {
+        val seen = mutableSetOf<String>()
+        return labels.mapIndexed { i, label ->
+            val name = if (label in seen && i > 0) "${labels[i - 1]} $label" else label
+            seen += name
+            name
         }
     }
 

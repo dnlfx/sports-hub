@@ -9,7 +9,8 @@ import java.util.Locale
  *
  * [fold] moves interceptions and fumbles into the tables above them and drops the
  * punting and return tables. [seasonTotals] adds a team's box scores from several
- * games into one set of season tables.
+ * games into one set of season tables. [relevantRows] leaves each player out of the
+ * tables for the side of the ball they don't really play.
  */
 object BoxScore {
 
@@ -150,7 +151,102 @@ object BoxScore {
             }
             first.copy(columns = listOf("GP") + columns, players = players)
         }
-        return fold(totals).map { it.sortedByLeaders() }
+        return relevantRows(fold(totals), perGame = false).map { it.sortedByLeaders() }
+    }
+
+    // ---------------------------------------------------------------------
+    // Who belongs in which table
+    // ---------------------------------------------------------------------
+
+    private val offenseTables = setOf("passing", "rushing", "receiving")
+    private val defenseTables = setOf("defensive", "interceptions")
+
+    /** What one player did across a team's box score tables. */
+    private class Volume {
+        var passes = 0.0
+        var carries = 0.0
+        var catches = 0.0
+        var tackles = 0.0
+        var interceptions = 0.0
+        var passesDefended = 0.0
+        var sacks = 0.0
+        var disruptions = 0.0
+        var kicks = 0.0
+        val offense get() = passes + carries + catches
+        val defense get() = tackles + interceptions + passesDefended + sacks
+    }
+
+    /**
+     * Drops each player's rows in tables for the side of the ball they don't play: a
+     * receiver's tackle after an interception, a kicker's tackle on a return, a
+     * linebacker's carry on a fake punt over a season. A player who really plays both
+     * ways (Travis Hunter) keeps both.
+     *
+     * [perGame] is for one game's box score, where one pass breakup or three tackles
+     * count as playing defense. Over a season ([perGame] false) the bar is the same as
+     * on the player's page, see [PositionStats].
+     */
+    fun relevantRows(tables: List<PlayerStatTable>, perGame: Boolean): List<PlayerStatTable> {
+        val volumes = mutableMapOf<String, Volume>()
+        tables.forEach { t ->
+            t.players.forEach { p ->
+                val v = volumes.getOrPut(p.athleteId) { Volume() }
+                fun a(vararg names: String) = StatValues.amountOf(t.columns, p.values, *names)
+                when (t.key) {
+                    "passing" -> v.passes += a("C/ATT", "ATT")
+                    "rushing" -> v.carries += a("CAR")
+                    "receiving" -> v.catches += a("REC")
+                    "defensive" -> {
+                        v.tackles += a("TOT")
+                        v.interceptions += a("INT")
+                        v.passesDefended += a("PD")
+                        v.sacks += a("SACKS", "SACK")
+                        v.disruptions += a("TFL") + a("QB HTS")
+                    }
+                    "interceptions" -> v.interceptions += a("INT")
+                    "kicking" -> v.kicks += a("FG") + a("XP")
+                    "punting" -> v.kicks += a("NO")
+                }
+            }
+        }
+
+        fun playsDefense(v: Volume) = if (perGame) {
+            v.tackles >= 3 || v.interceptions > 0 || v.passesDefended > 0 || v.sacks > 0 || v.disruptions > 0
+        } else {
+            v.tackles >= PositionStats.SEASON_TACKLES || v.interceptions >= PositionStats.SEASON_INTERCEPTIONS ||
+                v.passesDefended >= PositionStats.SEASON_PASSES_DEFENDED || v.sacks >= PositionStats.SEASON_SACKS
+        }
+        // In one game any touch on offense is a real play (a fake punt run, say).
+        fun playsOffense(v: Volume) = if (perGame) {
+            v.offense > 0
+        } else {
+            v.passes >= PositionStats.SEASON_PASSES || v.carries >= PositionStats.SEASON_CARRIES ||
+                v.catches >= PositionStats.SEASON_CATCHES
+        }
+
+        fun belongs(tableKey: String, id: String): Boolean {
+            val v = volumes[id] ?: return true
+            val side = when {
+                v.kicks > 0 && v.kicks >= v.offense && v.kicks >= v.defense -> PositionStats.Side.Specialist
+                v.defense > v.offense -> PositionStats.Side.Defense
+                else -> PositionStats.Side.Offense
+            }
+            return when (tableKey) {
+                in defenseTables -> side == PositionStats.Side.Defense || playsDefense(v)
+                in offenseTables -> side == PositionStats.Side.Offense || playsOffense(v)
+                else -> true
+            }
+        }
+
+        return tables.mapNotNull { t ->
+            if (t.key !in defenseTables && t.key !in offenseTables) return@mapNotNull t
+            val players = t.players.filter { belongs(t.key, it.athleteId) }
+            when {
+                players.isEmpty() -> null
+                players.size == t.players.size -> t
+                else -> t.copy(players = players)
+            }
+        }
     }
 
     private fun totalRow(tableKey: String, columns: List<String>, lines: List<PlayerStatLine>): List<String> {
