@@ -21,9 +21,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.SettingsInputAntenna
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -45,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.sportshub.app.data.tv.Networks
 import com.sportshub.app.model.Competitor
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.GameStatus
@@ -84,7 +88,7 @@ private val WinnerMarker = GenericShape { size, _ ->
  * What a screen reader says for a game card, as one sentence instead of every logo,
  * name and number on its own: "Live. Bills 24, Jets 17. Q3 4:12. Bills have the ball."
  */
-internal fun Game.spokenSummary(): String = buildString {
+internal fun Game.spokenSummary(overTheAir: Boolean = false): String = buildString {
     // Ranked college teams are read with their rank: "Number 5 Ohio State".
     val awayName = away.rank?.let { "Number $it ${away.team.name}" } ?: away.team.name
     val homeName = home.rank?.let { "Number $it ${home.team.name}" } ?: home.team.name
@@ -92,6 +96,7 @@ internal fun Game.spokenSummary(): String = buildString {
         GameStatus.Scheduled -> {
             append("$awayName at $homeName. ${statusLabel()}.")
             broadcasts.firstOrNull()?.let { append(" On $it.") }
+            if (overTheAir) append(" Free over the air in your area.")
         }
         else -> {
             if (isLive) append("Live. ")
@@ -106,13 +111,17 @@ internal fun Game.spokenSummary(): String = buildString {
     }
 }
 
+/**
+ * A game on the Scores list. [overTheAir] marks a game the user gets for free with an
+ * antenna where they are: an antenna next to its network.
+ */
 @Composable
-fun GameCard(game: Game, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun GameCard(game: Game, onClick: () -> Unit, modifier: Modifier = Modifier, overTheAir: Boolean = false) {
     val awayColor = game.away.team.accentColor()
     val homeColor = game.home.team.accentColor()
     val colors = SportsHubTheme.colors
     val live = game.isLive
-    val spoken = remember(game) { game.spokenSummary() }
+    val spoken = remember(game, overTheAir) { game.spokenSummary(overTheAir) }
     Column(
         modifier
             .fillMaxWidth()
@@ -156,7 +165,7 @@ fun GameCard(game: Game, onClick: () -> Unit, modifier: Modifier = Modifier) {
                     .height(60.dp)
                     .background(colors.stroke),
             )
-            StatusColumn(game, Modifier.width(88.dp))
+            StatusColumn(game, overTheAir, Modifier.width(88.dp))
         }
         SituationFooter(game)
     }
@@ -232,7 +241,7 @@ private fun TeamLine(side: Competitor, game: Game, opponent: Competitor) {
 }
 
 @Composable
-private fun StatusColumn(game: Game, modifier: Modifier) {
+private fun StatusColumn(game: Game, overTheAir: Boolean, modifier: Modifier) {
     Column(modifier.padding(start = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         when (val s = game.status) {
             is GameStatus.Live -> {
@@ -256,15 +265,43 @@ private fun StatusColumn(game: Game, modifier: Modifier) {
                 textAlign = TextAlign.Center,
             )
         }
-        game.broadcasts.firstOrNull()?.let {
+        val network = if (overTheAir) Networks.overTheAir(game.broadcasts) ?: game.broadcasts.firstOrNull() else game.broadcasts.firstOrNull()
+        network?.let {
             Spacer(Modifier.height(4.dp))
-            Text(
-                it,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (overTheAir) {
+                // Free with an antenna here: the network in the accent color, with an antenna.
+                Row(
+                    Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Outlined.SettingsInputAntenna,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(12.dp),
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            } else {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

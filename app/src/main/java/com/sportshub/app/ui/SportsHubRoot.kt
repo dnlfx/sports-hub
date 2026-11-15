@@ -81,6 +81,8 @@ import com.sportshub.app.ui.compare.CompareKind
 import com.sportshub.app.ui.compare.CompareScreen
 import com.sportshub.app.ui.compare.CompareViewModel
 import com.sportshub.app.ui.components.LightStatusBarIcons
+import com.sportshub.app.ui.coverage.CoverageScreen
+import com.sportshub.app.ui.coverage.CoverageViewModel
 import com.sportshub.app.ui.scores.GameDetailScreen
 import com.sportshub.app.ui.scores.GameDetailViewModel
 import com.sportshub.app.ui.scores.ScoresScreen
@@ -105,8 +107,10 @@ private const val GAME_ROUTE = "game/{sportId}/{gameId}"
 private const val TEAM_ROUTE = "team/{sportId}/{teamId}"
 private const val PLAYER_ROUTE = "player/{sportId}/{athleteId}"
 private const val COMPARE_ROUTE = "compare/{sportId}/{kind}/{firstId}"
+/** The NFL's TV coverage map for one week; "_" for any part that isn't known means the current week. */
+private const val COVERAGE_ROUTE = "coverage/{season}/{seasonType}/{week}"
 private fun isDetailRoute(route: String?) = route != null &&
-    listOf("game/", "team/", "player/", "compare/").any { route.startsWith(it) }
+    listOf("game/", "team/", "player/", "compare/", "coverage/").any { route.startsWith(it) }
 
 /** Height of the bottom navigation bar, not counting the system navigation bar below it. */
 private val NavBarHeight = 68.dp
@@ -118,6 +122,7 @@ fun SportsHubRoot(container: AppContainer) {
     val selectedSport by container.selectedSport.collectAsStateWithLifecycle()
     val favorites by container.favorites.teams.collectAsStateWithLifecycle()
     val promptDismissed by container.favorites.promptDismissed.collectAsStateWithLifecycle()
+    val tvMarket by container.tvMarkets.market.collectAsStateWithLifecycle()
     val route = backStack?.destination?.route
 
     // The tab the user is in. Game and team pages belong to the tab they were opened from.
@@ -215,6 +220,26 @@ fun SportsHubRoot(container: AppContainer) {
                         onDismissPrompt = container.favorites::dismissPrompt,
                         onToggleFavorite = { container.favorites.toggle(selectedSport, it) },
                         teamRepository = container.teamRepository,
+                        tvMarket = tvMarket,
+                        onOpenCoverage = { board ->
+                            navController.navigate("coverage/${board.season}/${board.seasonType}/${board.week ?: "_"}")
+                        },
+                    )
+                }
+                composable(COVERAGE_ROUTE) { entry ->
+                    val season = entry.arguments?.getString("season")?.toIntOrNull()
+                    val seasonType = entry.arguments?.getString("seasonType")?.toIntOrNull()
+                    val week = entry.arguments?.getString("week")?.toIntOrNull()
+                    val coverageViewModel: CoverageViewModel = viewModel(
+                        factory = viewModelFactory {
+                            initializer { CoverageViewModel(container.scoresRepository, season, seasonType, week) }
+                        },
+                    )
+                    CoverageScreen(
+                        viewModel = coverageViewModel,
+                        marketRepository = container.tvMarkets,
+                        onBack = { navController.popBackStack() },
+                        onOpenGame = { openGame(it) },
                     )
                 }
                 composable(Tab.Teams.route) {

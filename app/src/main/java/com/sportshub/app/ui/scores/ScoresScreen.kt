@@ -2,8 +2,10 @@ package com.sportshub.app.ui.scores
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,7 +23,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -44,12 +48,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.sportshub.app.data.TeamRepository
+import com.sportshub.app.data.tv.Coverage
+import com.sportshub.app.data.tv.TvMarket
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.Scoreboard
 import com.sportshub.app.model.Sport
@@ -61,6 +68,7 @@ import com.sportshub.app.ui.components.PrefetchImages
 import com.sportshub.app.ui.components.SectionHeader
 import com.sportshub.app.ui.components.SportMenuButton
 import com.sportshub.app.ui.components.bottomListPadding
+import com.sportshub.app.ui.components.cardSurface
 import com.sportshub.app.ui.components.icon
 import com.sportshub.app.ui.favorites.FavoriteTeamsSheet
 import com.sportshub.app.ui.favorites.FollowPrompt
@@ -91,6 +99,8 @@ fun ScoresScreen(
     onDismissPrompt: () -> Unit,
     onToggleFavorite: (Team) -> Unit,
     teamRepository: TeamRepository,
+    tvMarket: TvMarket? = null,
+    onOpenCoverage: (Scoreboard) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var picking by rememberSaveable { mutableStateOf(false) }
@@ -102,6 +112,8 @@ fun ScoresScreen(
     }
 
     val board = state.board
+    // Games the user gets for free with an antenna, marked on their cards.
+    val overTheAir = remember(board, tvMarket) { board?.let { Coverage.overTheAir(it, tvMarket) } ?: emptySet() }
     // Followed teams' logos start downloading on launch, alongside the scores, then every
     // logo on the slate, so cards further down are ready before they scroll into view.
     PrefetchImages(remember(favoriteTeams) { favoriteTeams.map { it.logoUrl } })
@@ -212,7 +224,19 @@ fun ScoresScreen(
                                     )
                                 }
                             }
-                            gameSections(state.sections, board, favoriteTeams, onOpenGame, onOpenTeam, onEditFavorites = { picking = true })
+                            if (sport == Sport.NFL) {
+                                item(key = "coverage", contentType = "coverage") {
+                                    CoverageEntry(
+                                        market = tvMarket,
+                                        localGames = remember(overTheAir, board) { board.games.count { it.id in overTheAir } },
+                                        onClick = { onOpenCoverage(board) },
+                                        modifier = Modifier
+                                            .padding(horizontal = 16.dp)
+                                            .animateItem(),
+                                    )
+                                }
+                            }
+                            gameSections(state.sections, board, favoriteTeams, overTheAir, onOpenGame, onOpenTeam, onEditFavorites = { picking = true })
                         }
                     }
                 }
@@ -243,6 +267,7 @@ private fun LazyListScope.gameSections(
     sections: List<GameSection>,
     board: Scoreboard,
     favorites: List<Team>,
+    overTheAir: Set<String>,
     onOpenGame: (Game) -> Unit,
     onOpenTeam: (Team) -> Unit,
     onEditFavorites: () -> Unit,
@@ -262,6 +287,7 @@ private fun LazyListScope.gameSections(
             GameCard(
                 game = game,
                 onClick = { onOpenGame(game) },
+                overTheAir = game.id in overTheAir,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .animateItem(),
@@ -293,6 +319,7 @@ private fun LazyListScope.gameSections(
             GameCard(
                 game = game,
                 onClick = { onOpenGame(game) },
+                overTheAir = game.id in overTheAir,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .animateItem(),
@@ -413,5 +440,49 @@ private fun ErrorBanner(message: String, savedAtMs: Long, onRetry: () -> Unit) {
             modifier = Modifier.weight(1f),
         )
         TextButton(onClick = onRetry) { Text("Retry", color = MaterialTheme.colorScheme.onErrorContainer) }
+    }
+}
+
+/**
+ * Opens the NFL's TV coverage map from the top of Scores, and says how many of the week's
+ * games the user gets for free over the air.
+ */
+@Composable
+private fun CoverageEntry(market: TvMarket?, localGames: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .cardSurface()
+            .clickable(role = Role.Button, onClickLabel = "Open TV coverage map", onClick = onClick)
+            .padding(start = 14.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Outlined.Map, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text("TV coverage map", style = MaterialTheme.typography.titleMedium)
+            Text(
+                when {
+                    market == null -> "See which games air where. Set your market to mark the ones on free TV near you."
+                    localGames == 1 -> "1 game on free TV in ${market.name} this week"
+                    else -> "$localGames games on free TV in ${market.name} this week"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

@@ -12,6 +12,8 @@ An Android sports app: live scores and stats, team pages, player profiles, plus 
 - **College football**: the top of the sport only: the SEC, Big Ten, Big 12 and ACC, plus Notre Dame. A game shows when at least one side is one of those teams, so Ohio State against a smaller school is listed but two smaller schools aren't. Ranked teams carry their poll rank on score cards and game pages. Bowls and the playoff follow week 15 (conference championships). Teams are grouped by conference.
 - **Teams**: the standings, a card per division (per conference in college football) with each team's rank, record, games behind and streak, the leader marked. College conferences rank by conference record. Your teams lead the page with their place in their division, and pills narrow it to one conference (AFC or NFC, East or West). A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score (per-game averages and totals in the NBA), team season stats, the roster and the depth chart.
 - **Players**: tap a player anywhere for their bio (height, weight, age, college, draft) right under their name and photo, this season's numbers and career stats by year. Only the stat categories that fit their position show, unless they really play both ways.
+- **TV coverage (NFL)**: a map for each network and window of the week (CBS early, FOX single game, Sunday night and so on), colored by the game each part of the country gets, with each game's share of TV homes and the user's own market ringed. Tap the map to see what any market gets; arrows step through the weeks. It opens from the card at the top of the NFL scores. The coverage is projected the way the weekly network maps work: a team's home markets (within 75 miles of its stadium, plus Milwaukee for Green Bay) always get its game, other markets get the game played closest to them, a lone game on its network goes everywhere, and cable or streaming games (ESPN, Prime Video, NFL Network, Netflix) are free over the air only in the teams' home markets. The network with the Sunday doubleheader is the one with 4:25 PM kickoffs; the other network's early and late games share one "single game" map. A link opens the official maps at 506 Sports, since the networks' final calls outside home markets can differ.
+- **On free TV near you**: games the user gets with an antenna show their network with an antenna icon on score cards. Set the TV market from the coverage page, from the phone's approximate location (asked for only then, and used once) or by searching about 200 markets. Without a market, only national broadcast games are marked. Other sports mark broadcast games that are alone on their network at the time.
 - **Compare**: two teams or two players side by side, stat by stat, with the better number in each row in that side's color and a tally of who's ahead. Open it from a team or player page, or the Teams tab. Team stats compare per game where ESPN gives it; players compare their latest season or whole career.
 
 ## Stack
@@ -26,6 +28,7 @@ An Android sports app: live scores and stats, team pages, player profiles, plus 
 app/src/main/java/com/sportshub/app/
   model/      Sport, Game, Team, StreamSource (sport-agnostic)
   data/       ScoresRepository (swappable data provider), TeamRepository, FavoritesRepository (followed teams), SourcesRepository (saved URLs), page scanner
+  data/tv/    TV markets, NFL home markets, coverage windows, the map outline and the user's market
   ui/         Scores, Teams, Watch and Sources tabs, game detail (with the win probability chart), team, player, compare, favorites, shared components, theme
 ```
 
@@ -55,7 +58,9 @@ Adding a sport means flipping `isAvailable` in `Sport.kt` and teaching the score
 
 ## Platform
 
-Targets Android 17 (API 37), minimum Android 8.0 (API 26). On Android 17 the app asks for local network access only if a saved source is on the home network (a private IP or a `.local` name).
+Targets Android 17 (API 37), minimum Android 8.0 (API 26). On Android 17 the app asks for local network access only if a saved source is on the home network (a private IP or a `.local` name). Approximate location is asked for only when the user taps "Use my location" to find their TV market.
+
+The coverage map's outline (`app/src/main/assets/us_map.txt`) is built from the U.S. Census Bureau's state boundaries, via the us-atlas package, by `tools/make_us_map.py`.
 
 ## Sources
 
