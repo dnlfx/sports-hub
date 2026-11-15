@@ -26,7 +26,7 @@ import java.util.TimeZone
 /**
  * Runs the real app on the JVM against live data (ESPN's scores, the TV guide's listings)
  * and saves screenshots of the NFL scores and the TV coverage page, with the TV market set
- * to New York and the ZIP to 10001 (-Dscreenshots.market / -Dscreenshots.zip to change).
+ * to Dallas-Fort Worth and no ZIP (-Pscreenshots.market / -Pscreenshots.zip / -Pscreenshots.tz to change).
  *
  * Only runs when asked: ./gradlew testDebugUnitTest -Pscreenshots --tests '*AppScreenshots*'
  * The PNGs land in app/build/screenshots.
@@ -60,11 +60,11 @@ class AppScreenshots {
         compose.waitUntil(timeoutMs) { compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
 
     @Test fun scoresAndCoverage() {
-        TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
+        TimeZone.setDefault(TimeZone.getTimeZone(System.getProperty("screenshots.tz") ?: "America/Chicago"))
         val app = ApplicationProvider.getApplicationContext<SportsHubApp>()
         app.container.selectSport(Sport.NFL)
-        app.container.tvMarkets.set(TvMarkets.byId(System.getProperty("screenshots.market") ?: "new-york"))
-        app.container.tvMarkets.setZip(System.getProperty("screenshots.zip") ?: "10001")
+        app.container.tvMarkets.set(TvMarkets.byId(System.getProperty("screenshots.market") ?: "dallas"))
+        app.container.tvMarkets.setZip(System.getProperty("screenshots.zip"))
 
         scenario = ActivityScenario.launch(MainActivity::class.java)
         scenario.use {

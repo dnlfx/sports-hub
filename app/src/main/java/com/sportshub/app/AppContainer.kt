@@ -49,7 +49,7 @@ class AppContainer(context: Context) {
     val sourcesRepository = SourcesRepository(appContext)
     val favorites = FavoritesRepository(appContext)
     val tvMarkets = TvMarketRepository(appContext)
-    val localListings = LocalListingsRepository(http)
+    val localListings = LocalListingsRepository(http, appContext.filesDir.resolve("tv-guide"))
     val pageScanner = PageScanner(http)
 
     /**
