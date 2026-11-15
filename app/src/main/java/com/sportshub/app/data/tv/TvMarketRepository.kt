@@ -4,23 +4,27 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import android.os.CancellationSignal
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.Locale
 import kotlin.coroutines.resume
 
 /**
- * The user's TV market, which decides which games they get over the air. Picked from a
- * list, or found once from the phone's approximate location (never tracked). Saved on
- * the device only.
+ * The user's TV market, which decides which games they get over the air, and their ZIP
+ * code, for the exact channels from the TV guide. Picked from a list and typed in, or
+ * found once from the phone's approximate location (never tracked). Saved on the device only.
  */
 class TvMarketRepository(context: Context) {
     private val appContext = context.applicationContext
@@ -32,6 +36,17 @@ class TvMarketRepository(context: Context) {
     fun set(market: TvMarket?) {
         _market.value = market
         prefs.edit().putString(KEY_MARKET, market?.id).apply()
+    }
+
+    private val _zip = MutableStateFlow(prefs.getString(KEY_ZIP, null)?.takeIf(LocalListings::isZip))
+
+    /** The user's ZIP code, for their exact antenna channels from the TV guide. */
+    val zip: StateFlow<String?> = _zip.asStateFlow()
+
+    fun setZip(zip: String?) {
+        val valid = zip?.takeIf(LocalListings::isZip)
+        _zip.value = valid
+        prefs.edit().putString(KEY_ZIP, valid).apply()
     }
 
     fun hasLocationPermission(): Boolean =
@@ -49,8 +64,19 @@ class TvMarketRepository(context: Context) {
         val last = providers
             .mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }
             .maxByOrNull { it.time }
-        val location = last ?: fresh(manager, providers)
-        return location?.let { TvMarkets.nearest(it.latitude, it.longitude) }
+        val location = last ?: fresh(manager, providers) ?: return null
+        zipAt(location)?.let(::setZip)
+        return TvMarkets.nearest(location.latitude, location.longitude)
+    }
+
+    /** The ZIP code at [location], from the phone's geocoder when it has one. */
+    private suspend fun zipAt(location: Location): String? = withContext(Dispatchers.IO) {
+        if (!Geocoder.isPresent()) return@withContext null
+        runCatching {
+            @Suppress("DEPRECATION")
+            Geocoder(appContext, Locale.US).getFromLocation(location.latitude, location.longitude, 1)
+                ?.firstOrNull()?.postalCode?.take(5)?.takeIf(LocalListings::isZip)
+        }.getOrNull()
     }
 
     @SuppressLint("MissingPermission")
@@ -82,5 +108,6 @@ class TvMarketRepository(context: Context) {
     companion object {
         const val LOCATION_PERMISSION = Manifest.permission.ACCESS_COARSE_LOCATION
         private const val KEY_MARKET = "tv_market"
+        private const val KEY_ZIP = "tv_zip"
     }
 }

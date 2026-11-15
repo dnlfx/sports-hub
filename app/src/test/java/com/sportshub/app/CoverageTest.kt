@@ -94,15 +94,18 @@ class CoverageTest {
         assertEquals(CoverageWindow.Kind.National, window("CBS late").kind)
     }
 
-    @Test fun homeMarketsGetTheirTeamAndOthersTheClosestGame() {
+    @Test fun homeMarketsGetTheirTeamFanRegionsTheirsAndTheRestTheFeaturedGame() {
         val early = window("CBS early")
         assertEquals("BUF@KC", early.airing["buffalo"])
         assertEquals("BUF@KC", early.airing["rochester-ny"])
         assertEquals("BUF@KC", early.airing["kansas-city"])
         assertEquals("NYJ@MIA", early.airing["miami"])
         assertEquals("NYJ@MIA", early.airing["new-york"])
+        // Far from both games: the featured game, the bigger draw.
         assertEquals("BUF@KC", early.airing["chicago"])
-        assertEquals("NYJ@MIA", early.airing["atlanta"])
+        assertEquals("BUF@KC", early.airing["atlanta"])
+        // In the Dolphins' fan region.
+        assertEquals("NYJ@MIA", early.airing["west-palm-beach"])
         assertEquals(1.0, early.share("BUF@KC") + early.share("NYJ@MIA"), 1e-9)
 
         val fox = window("FOX single game")
@@ -112,6 +115,36 @@ class CoverageTest {
         assertEquals("DAL@PHI", fox.airing["denver"])
 
         assertEquals(TvMarkets.all.size, window("CBS late").airing.size)
+    }
+
+    /**
+     * FOX's early games on Nov 15, 2026. The free TV guide's antenna listings for New York
+     * (ZIP 10001) showed Vikings at Packers on FOX 5.1, the featured game, not the closest one.
+     */
+    @Test fun neutralMarketsGetTheFeaturedGame() {
+        fun g(away: String, home: String, awayRecord: String, homeRecord: String) = game(away, home, "FOX", sunday, 13).let {
+            it.copy(
+                away = it.away.copy(team = it.away.team.copy(record = awayRecord)),
+                home = it.home.copy(team = it.home.team.copy(record = homeRecord)),
+            )
+        }
+        val early = listOf(
+            g("HOU", "CLE", "5-4", "3-6"),
+            g("MIN", "GB", "6-3", "7-2"),
+            g("JAX", "TEN", "4-5", "2-7"),
+            g("CAR", "NO", "3-6", "4-5"),
+        )
+        assertEquals("MIN@GB", Coverage.featured(early).id)
+        assertEquals("MIN@GB", Coverage.pick(market("new-york"), early).id)
+        assertEquals("HOU@CLE", Coverage.pick(market("cleveland"), early).id)
+        // The Steelers aren't playing: Pittsburgh gets their division rival nearby.
+        assertEquals("HOU@CLE", Coverage.pick(market("pittsburgh"), early).id)
+        assertEquals("JAX@TEN", Coverage.pick(market("nashville"), early).id)
+        assertEquals("MIN@GB", Coverage.pick(market("minneapolis"), early).id)
+        assertEquals("MIN@GB", Coverage.pick(market("denver"), early).id)
+        assertEquals(0.75, Coverage.winShare("6-2"), 1e-9)
+        assertEquals(0.65, Coverage.winShare("6-3-1"), 1e-9)
+        assertEquals(0.5, Coverage.winShare(null), 1e-9)
     }
 
     @Test fun cableGamesAreOverTheAirOnlyInTheTeamsHomeMarkets() {

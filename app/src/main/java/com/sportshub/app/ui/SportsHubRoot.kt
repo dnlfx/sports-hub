@@ -123,6 +123,7 @@ fun SportsHubRoot(container: AppContainer) {
     val favorites by container.favorites.teams.collectAsStateWithLifecycle()
     val promptDismissed by container.favorites.promptDismissed.collectAsStateWithLifecycle()
     val tvMarket by container.tvMarkets.market.collectAsStateWithLifecycle()
+    val tvZip by container.tvMarkets.zip.collectAsStateWithLifecycle()
     val route = backStack?.destination?.route
 
     // The tab the user is in. Game and team pages belong to the tab they were opened from.
@@ -221,6 +222,8 @@ fun SportsHubRoot(container: AppContainer) {
                         onToggleFavorite = { container.favorites.toggle(selectedSport, it) },
                         teamRepository = container.teamRepository,
                         tvMarket = tvMarket,
+                        tvZip = tvZip,
+                        localListings = container.localListings,
                         onOpenCoverage = { board ->
                             navController.navigate("coverage/${board.season}/${board.seasonType}/${board.week ?: "_"}")
                         },

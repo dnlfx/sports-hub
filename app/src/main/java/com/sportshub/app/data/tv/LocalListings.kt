@@ -63,10 +63,16 @@ data class LocalLineup(
  * sites) for the user's ZIP code and antenna lineup, and finds the NFL games in it.
  */
 object LocalListings {
-    /** The guide's lineup of stations an antenna gets in a ZIP code. */
-    fun antennaLineupId(zip: String): String = "USA-OTA$zip-DEFAULT"
-
     fun isZip(zip: String): Boolean = zip.length == 5 && zip.all { it.isDigit() }
+
+    /**
+     * The guide's grid for the stations an antenna gets in [zip] ("Local Over the Air
+     * Broadcast" in the guide's lineup picker), [hours] hours from [start].
+     */
+    fun gridUrl(zip: String, start: Instant, hours: Int = 6): String =
+        "https://tvlistings.gracenote.com/api/grid?lineupId=USA-lineupId-DEFAULT&timespan=$hours" +
+            "&headendId=lineupId&country=USA&device=-&postalCode=$zip&time=${start.epochSecond}" +
+            "&isOverride=true&pref=-&userId=-&aid=orbebb&languagecode=en-us"
 
     /** The guide's grid, parsed. Empty when the response isn't one. */
     fun parse(json: String): List<ListingChannel> {
@@ -101,11 +107,15 @@ object LocalListings {
     private fun instant(text: String?): Instant? =
         text?.let { runCatching { OffsetDateTime.parse(it).toInstant() }.recoverCatching { _ -> Instant.parse(it) }.getOrNull() }
 
-    /** "CBS", "FOX", "NBC"... from the guide's affiliate names, which are sometimes longer. */
-    private fun networkName(affiliate: String): String {
+    /** "CBS", "FOX", "NBC"... from the guide's affiliate names ("CBS TELEVISION NETWORK", "FOX ENTERTAINMENT"). */
+    internal fun networkName(affiliate: String): String {
         val upper = affiliate.uppercase()
-        return listOf("CBS", "FOX", "NBC", "ABC", "CW").firstOrNull { upper == it || upper.startsWith("$it ") || upper.startsWith("$it-") }
-            ?: affiliate
+        return when {
+            upper.startsWith("NATIONAL BROADCASTING") -> "NBC"
+            upper.startsWith("AMERICAN BROADCASTING") -> "ABC"
+            else -> listOf("CBS", "FOX", "NBC", "ABC", "CW").firstOrNull { upper == it || upper.startsWith("$it ") || upper.startsWith("$it-") }
+                ?: affiliate
+        }
     }
 
     /** Whether the grid has listings at [time] at all, so a game missing from it can be trusted to be missing. */

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SettingsInputAntenna
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -41,7 +42,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sportshub.app.data.tv.LocalListings
 import com.sportshub.app.data.tv.TvMarket
 import com.sportshub.app.data.tv.TvMarketRepository
 import com.sportshub.app.data.tv.TvMarkets
@@ -63,6 +67,8 @@ fun MarketPickerSheet(
     var locating by remember { mutableStateOf(false) }
     var locateFailed by remember { mutableStateOf<String?>(null) }
     val results = remember(query) { TvMarkets.search(query) }
+    val savedZip by repository.zip.collectAsStateWithLifecycle()
+    var zip by rememberSaveable { mutableStateOf(savedZip.orEmpty()) }
 
     fun pick(market: TvMarket) {
         repository.set(market)
@@ -114,6 +120,26 @@ fun MarketPickerSheet(
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
             Spacer(Modifier.height(12.dp))
+            // The ZIP code gets the user's real channels from the TV guide. It saves as soon as
+            // it's five digits, and clearing the field clears it.
+            OutlinedTextField(
+                value = zip,
+                onValueChange = { typed ->
+                    zip = typed.filter { it.isDigit() }.take(5)
+                    if (LocalListings.isZip(zip)) repository.setZip(zip) else if (zip.isEmpty()) repository.setZip(null)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Outlined.SettingsInputAntenna, contentDescription = null) },
+                label = { Text("ZIP code") },
+                supportingText = {
+                    Text(
+                        if (savedZip != null) "Showing your exact antenna channels from the TV guide." else "For your exact antenna channels from the TV guide.",
+                    )
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            )
+            Spacer(Modifier.height(4.dp))
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },

@@ -56,6 +56,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.sportshub.app.data.TeamRepository
 import com.sportshub.app.data.tv.Coverage
+import com.sportshub.app.data.tv.LocalLineup
+import com.sportshub.app.data.tv.LocalListings
+import com.sportshub.app.data.tv.LocalListingsRepository
 import com.sportshub.app.data.tv.TvMarket
 import com.sportshub.app.model.Game
 import com.sportshub.app.model.Scoreboard
@@ -100,6 +103,8 @@ fun ScoresScreen(
     onToggleFavorite: (Team) -> Unit,
     teamRepository: TeamRepository,
     tvMarket: TvMarket? = null,
+    tvZip: String? = null,
+    localListings: LocalListingsRepository? = null,
     onOpenCoverage: (Scoreboard) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -112,8 +117,24 @@ fun ScoresScreen(
     }
 
     val board = state.board
-    // Games the user gets for free with an antenna, marked on their cards.
-    val overTheAir = remember(board, tvMarket) { board?.let { Coverage.overTheAir(it, tvMarket) } ?: emptySet() }
+    // The user's real antenna lineup from the TV guide, when their ZIP is set (NFL only).
+    // Looked up again when the slate changes, not on every score update.
+    var lineup by remember { mutableStateOf<LocalLineup?>(null) }
+    val slateIds = board?.takeIf { it.sport == Sport.NFL }?.games?.map { it.id }
+    LaunchedEffect(tvZip, slateIds) {
+        val games = board?.games
+        lineup = if (tvZip != null && localListings != null && slateIds != null && games != null) {
+            localListings.lineup(tvZip, games)
+        } else {
+            null
+        }
+    }
+    // Games the user gets for free with an antenna, marked on their cards: the guide's
+    // answer where it has one, the coverage estimate for the rest.
+    val overTheAir = remember(board, tvMarket, lineup) {
+        board?.let { LocalListings.overTheAir(Coverage.overTheAir(it, tvMarket), lineup?.takeIf { _ -> it.sport == Sport.NFL }) } ?: emptySet()
+    }
+    val channels = remember(lineup) { lineup?.airings?.mapValues { it.value.label }.orEmpty() }
     // Followed teams' logos start downloading on launch, alongside the scores, then every
     // logo on the slate, so cards further down are ready before they scroll into view.
     PrefetchImages(remember(favoriteTeams) { favoriteTeams.map { it.logoUrl } })
@@ -236,7 +257,7 @@ fun ScoresScreen(
                                     )
                                 }
                             }
-                            gameSections(state.sections, board, favoriteTeams, overTheAir, onOpenGame, onOpenTeam, onEditFavorites = { picking = true })
+                            gameSections(state.sections, board, favoriteTeams, overTheAir, channels, onOpenGame, onOpenTeam, onEditFavorites = { picking = true })
                         }
                     }
                 }
@@ -268,6 +289,7 @@ private fun LazyListScope.gameSections(
     board: Scoreboard,
     favorites: List<Team>,
     overTheAir: Set<String>,
+    channels: Map<String, String>,
     onOpenGame: (Game) -> Unit,
     onOpenTeam: (Team) -> Unit,
     onEditFavorites: () -> Unit,
@@ -288,6 +310,7 @@ private fun LazyListScope.gameSections(
                 game = game,
                 onClick = { onOpenGame(game) },
                 overTheAir = game.id in overTheAir,
+                channel = channels[game.id],
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .animateItem(),
@@ -320,6 +343,7 @@ private fun LazyListScope.gameSections(
                 game = game,
                 onClick = { onOpenGame(game) },
                 overTheAir = game.id in overTheAir,
+                channel = channels[game.id],
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .animateItem(),

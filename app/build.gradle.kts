@@ -50,6 +50,21 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { test ->
+                // Screenshots load live data and take a minute, so they only run when asked:
+                // ./gradlew testDebugUnitTest -Pscreenshots --tests '*AppScreenshots*'
+                // PNGs land in app/build/screenshots.
+                if (project.hasProperty("screenshots")) {
+                    test.systemProperty("screenshots.dir", layout.buildDirectory.dir("screenshots").get().asFile.absolutePath)
+                } else {
+                    test.exclude("**/screenshots/**")
+                }
+            }
+        }
+    }
 }
 
 kotlin {
@@ -94,4 +109,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    // Screenshots of the real app on the JVM (see AppScreenshots): Robolectric draws
+    // Compose with Android's own graphics, no emulator needed.
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

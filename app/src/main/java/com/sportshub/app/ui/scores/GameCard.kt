@@ -88,7 +88,7 @@ private val WinnerMarker = GenericShape { size, _ ->
  * What a screen reader says for a game card, as one sentence instead of every logo,
  * name and number on its own: "Live. Bills 24, Jets 17. Q3 4:12. Bills have the ball."
  */
-internal fun Game.spokenSummary(overTheAir: Boolean = false): String = buildString {
+internal fun Game.spokenSummary(overTheAir: Boolean = false, channel: String? = null): String = buildString {
     // Ranked college teams are read with their rank: "Number 5 Ohio State".
     val awayName = away.rank?.let { "Number $it ${away.team.name}" } ?: away.team.name
     val homeName = home.rank?.let { "Number $it ${home.team.name}" } ?: home.team.name
@@ -96,7 +96,7 @@ internal fun Game.spokenSummary(overTheAir: Boolean = false): String = buildStri
         GameStatus.Scheduled -> {
             append("$awayName at $homeName. ${statusLabel()}.")
             broadcasts.firstOrNull()?.let { append(" On $it.") }
-            if (overTheAir) append(" Free over the air in your area.")
+            if (overTheAir) append(if (channel != null) " Free over the air on $channel." else " Free over the air in your area.")
         }
         else -> {
             if (isLive) append("Live. ")
@@ -113,15 +113,22 @@ internal fun Game.spokenSummary(overTheAir: Boolean = false): String = buildStri
 
 /**
  * A game on the Scores list. [overTheAir] marks a game the user gets for free with an
- * antenna where they are: an antenna next to its network.
+ * antenna where they are: an antenna next to its network, or next to the local [channel]
+ * ("CBS 2.1") when the TV guide says which one.
  */
 @Composable
-fun GameCard(game: Game, onClick: () -> Unit, modifier: Modifier = Modifier, overTheAir: Boolean = false) {
+fun GameCard(
+    game: Game,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    overTheAir: Boolean = false,
+    channel: String? = null,
+) {
     val awayColor = game.away.team.accentColor()
     val homeColor = game.home.team.accentColor()
     val colors = SportsHubTheme.colors
     val live = game.isLive
-    val spoken = remember(game, overTheAir) { game.spokenSummary(overTheAir) }
+    val spoken = remember(game, overTheAir, channel) { game.spokenSummary(overTheAir, channel) }
     Column(
         modifier
             .fillMaxWidth()
@@ -165,7 +172,7 @@ fun GameCard(game: Game, onClick: () -> Unit, modifier: Modifier = Modifier, ove
                     .height(60.dp)
                     .background(colors.stroke),
             )
-            StatusColumn(game, overTheAir, Modifier.width(88.dp))
+            StatusColumn(game, overTheAir, channel, Modifier.width(88.dp))
         }
         SituationFooter(game)
     }
@@ -241,7 +248,7 @@ private fun TeamLine(side: Competitor, game: Game, opponent: Competitor) {
 }
 
 @Composable
-private fun StatusColumn(game: Game, overTheAir: Boolean, modifier: Modifier) {
+private fun StatusColumn(game: Game, overTheAir: Boolean, channel: String?, modifier: Modifier) {
     Column(modifier.padding(start = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         when (val s = game.status) {
             is GameStatus.Live -> {
@@ -265,7 +272,11 @@ private fun StatusColumn(game: Game, overTheAir: Boolean, modifier: Modifier) {
                 textAlign = TextAlign.Center,
             )
         }
-        val network = if (overTheAir) Networks.overTheAir(game.broadcasts) ?: game.broadcasts.firstOrNull() else game.broadcasts.firstOrNull()
+        val network = if (overTheAir) {
+            channel ?: Networks.overTheAir(game.broadcasts) ?: game.broadcasts.firstOrNull()
+        } else {
+            game.broadcasts.firstOrNull()
+        }
         network?.let {
             Spacer(Modifier.height(4.dp))
             if (overTheAir) {

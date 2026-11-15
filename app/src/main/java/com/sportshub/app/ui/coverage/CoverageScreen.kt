@@ -73,7 +73,9 @@ import com.sportshub.app.ui.theme.SportsHubTheme
 import kotlin.math.roundToInt
 
 /** Where the networks' own weekly maps are collected. */
-private const val OFFICIAL_MAPS_URL = "https://506sports.com/nfl/index-m.php"
+/** 506 Sports' maps for one week of the regular season, or its NFL page when the week isn't known. */
+private fun officialMapsUrl(season: Int?, seasonType: Int?, week: Int?): String =
+    if (season != null && week != null && seasonType == 2) "https://506sports.com/nfl.php?yr=$season&wk=$week" else "https://506sports.com/nfl.php"
 
 /** Widest the page gets on big screens. */
 private val MaxContentWidth = 720.dp
@@ -102,6 +104,7 @@ fun CoverageScreen(
     LightStatusBarIcons(enabled = false)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val market by marketRepository.market.collectAsStateWithLifecycle()
+    val zip by marketRepository.zip.collectAsStateWithLifecycle()
     var picking by rememberSaveable { mutableStateOf(false) }
     var windowKey by rememberSaveable { mutableStateOf<String?>(null) }
     var tapped by remember { mutableStateOf<TvMarket?>(null) }
@@ -163,7 +166,7 @@ fun CoverageScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item(key = "market") {
-                    MarketCard(market, onChange = { picking = true }, modifier = Modifier.padding(horizontal = 16.dp))
+                    MarketCard(market, zip, onChange = { picking = true }, modifier = Modifier.padding(horizontal = 16.dp))
                 }
                 when {
                     state.coverage == null && state.isLoading -> item(key = "loading") {
@@ -236,7 +239,7 @@ fun CoverageScreen(
                             )
                         }
                         item(key = "about") {
-                            About(onOfficialMaps = { uriHandler.openUri(OFFICIAL_MAPS_URL) })
+                            About(onOfficialMaps = { uriHandler.openUri(officialMapsUrl(state.season, state.seasonType, state.week)) })
                         }
                     }
                 }
@@ -250,7 +253,7 @@ fun CoverageScreen(
 }
 
 @Composable
-private fun MarketCard(market: TvMarket?, onChange: () -> Unit, modifier: Modifier = Modifier) {
+private fun MarketCard(market: TvMarket?, zip: String?, onChange: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier
             .fillMaxWidth()
@@ -274,6 +277,13 @@ private fun MarketCard(market: TvMarket?, onChange: () -> Unit, modifier: Modifi
             Text(
                 market?.label ?: "Not set",
                 style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                if (zip != null) "ZIP $zip: exact channels on Scores" else "Add your ZIP for exact channels",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -354,7 +364,7 @@ private fun GameReach(
                 )
                 if (yours) {
                     Spacer(Modifier.width(8.dp))
-                    Tag("YOUR MARKET", MaterialTheme.colorScheme.primary)
+                    Tag("YOURS", MaterialTheme.colorScheme.primary)
                 }
             }
             Text(
@@ -374,10 +384,10 @@ private fun GameReach(
 private fun About(onOfficialMaps: () -> Unit) {
     Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
         Text(
-            "Projected from each game's network and kickoff. A team's home markets always get its game; " +
-                "elsewhere a market gets the game played closest to it. Games on cable or streaming are " +
-                "shown on a local station in the teams' home markets. The networks' final maps can differ " +
-                "outside home markets.",
+            "Projected from each game's network and kickoff. A team's home markets always get its game, " +
+                "and its fan region usually does too; elsewhere it's a mix of the nearest game and the biggest " +
+                "draw. Games on cable or streaming are shown on a local station in the teams' home markets. " +
+                "Right for about 3 in 4 markets; with your ZIP set, Scores shows your real channels from the TV guide.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

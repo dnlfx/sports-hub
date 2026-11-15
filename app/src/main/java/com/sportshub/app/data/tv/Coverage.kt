@@ -68,15 +68,24 @@ data class CoverageWeek(val windows: List<CoverageWindow>) {
  * Works out the TV coverage of a week of games from their networks and kickoff times.
  *
  * ESPN's data says which network has each game but not which markets get it, so regional
- * games are assigned the way the networks do it first, then by proximity:
+ * games are assigned the way the networks do it, in this order:
  *  1. A team's home markets always get its game.
- *  2. Every other market gets the game whose team plays closest to it.
- * A game alone on its network in its window goes everywhere. The networks' real maps
- * also weigh which game is the bigger draw, so they can differ outside home markets.
+ *  2. A team's fan region ([NflRegions]) gets its game.
+ *  3. A market whose own team isn't playing that afternoon gets a division rival's game from within
+ *     [RIVAL_MILES] (Pittsburgh and Cincinnati get the Browns).
+ *  4. Everywhere else gets the best mix of a near game and a big draw (the teams' national
+ *     following plus their records), so the network's featured game reaches far and the
+ *     others stay closer to home.
+ * A game alone on its network in its window goes everywhere. Checked against two weeks of
+ * real local listings (CoverageAccuracyTest): about 9 in 10 market maps right on the week
+ * the rules were tuned on, 3 in 4 on a week they weren't. The networks decide which game
+ * to feature on more than ratings and records, which is most of the misses.
  *
  * The network with Sunday's doubleheader starts its late games at 4:25 PM ET; the other
  * network's late games start at 4:05 and each market gets only one of its games that day,
- * early or late, so its two windows are mapped as one "single game" window.
+ * early or late, so its two windows are mapped as one "single game" window. Markets get
+ * an early game, unless a late game is theirs by the rules above, or their own team plays
+ * early on another network, which the single-game network doesn't go against.
  */
 object Coverage {
     private val eastern: ZoneId = ZoneId.of("America/New_York")
@@ -98,6 +107,9 @@ object Coverage {
         val withNetwork = games.filter { it.broadcasts.isNotEmpty() }
         val (broadcast, other) = withNetwork.partition { Networks.overTheAir(it.broadcasts) != null }
 
+        // Teams playing on Sunday afternoon on any broadcast network: their markets skip the rival rule then.
+        val sundayTeams = broadcast.filter { it.isSundayAfternoon() }.flatMap(::teams).toSet()
+
         // Broadcast networks: Sunday afternoons by early and late window, everything else by start time.
         broadcast.groupBy { Networks.overTheAir(it.broadcasts)!! }.forEach { (network, list) ->
             val (sundayAfternoon, rest) = list.partition { it.isSundayAfternoon() }
@@ -105,10 +117,14 @@ object Coverage {
                 val (early, late) = sundayAfternoon.partition { it.easternMinutes() < 15 * 60 }
                 val doubleheader = late.any { it.easternMinutes() >= 16 * 60 + 15 }
                 if (doubleheader) {
-                    if (early.isNotEmpty()) windows += broadcastWindow(network, "$network early", early, markets)
-                    windows += broadcastWindow(network, "$network late", late, markets)
+                    if (early.isNotEmpty()) windows += broadcastWindow(network, "$network early", early, markets, playingThen = sundayTeams)
+                    windows += broadcastWindow(network, "$network late", late, markets, playingThen = sundayTeams)
                 } else {
-                    windows += broadcastWindow(network, "$network single game", sundayAfternoon, markets)
+                    // Teams playing early on another network: their markets get this network's late game.
+                    val busyEarly = broadcast.filter {
+                        it.isSundayAfternoon() && it.easternMinutes() < 15 * 60 && Networks.overTheAir(it.broadcasts) != network
+                    }.flatMap { listOf(it.home.team.abbreviation, it.away.team.abbreviation) }.toSet()
+                    windows += broadcastWindow(network, "$network single game", sundayAfternoon, markets, busyEarly, sundayTeams)
                 }
             }
             rest.groupBy { it.slotKey() }.values.forEach { slot ->
@@ -141,12 +157,19 @@ object Coverage {
         return CoverageWeek(windows.sortedWith(compareBy<CoverageWindow> { it.start }.thenBy { it.kind }.thenBy { it.network }))
     }
 
-    private fun broadcastWindow(network: String, title: String, games: List<Game>, markets: List<TvMarket>): CoverageWindow {
+    private fun broadcastWindow(
+        network: String,
+        title: String,
+        games: List<Game>,
+        markets: List<TvMarket>,
+        busyEarly: Set<String>? = null,
+        playingThen: Set<String> = emptySet(),
+    ): CoverageWindow {
         val sorted = games.sortedBy { it.startTime }
-        val airing = if (sorted.size == 1) {
-            markets.associate { it.id to sorted[0].id }
-        } else {
-            markets.associate { it.id to pick(it, sorted).id }
+        val airing = when {
+            sorted.size == 1 -> markets.associate { it.id to sorted[0].id }
+            busyEarly != null -> markets.associate { it.id to pickSingleGame(it, sorted, busyEarly, playingThen).id }
+            else -> markets.associate { it.id to pick(it, sorted, playingThen).id }
         }
         return CoverageWindow(
             key = "$network-${sorted.first().startTime.epochSecond}-${sorted.size}-$title",
@@ -159,16 +182,94 @@ object Coverage {
         )
     }
 
-    /** The game [market] gets among several on one network: its own team's, else the closest team's. */
-    internal fun pick(market: TvMarket, games: List<Game>): Game {
-        fun closest(game: Game): Double = listOfNotNull(
-            NflHomes.milesTo(market, game.home.team.abbreviation),
-            NflHomes.milesTo(market, game.away.team.abbreviation),
-        ).minOrNull() ?: Double.MAX_VALUE
-        val home = games.filter {
-            NflHomes.isHome(market, it.home.team.abbreviation) || NflHomes.isHome(market, it.away.team.abbreviation)
+    /** How close a division rival's game has to be for a market whose team isn't playing to get it. */
+    const val RIVAL_MILES = 250.0
+
+    /**
+     * How strongly each team draws viewers outside its own region, 1 to 10. Teams not
+     * listed count as 4. Based on the teams' usual national TV ratings; tune as needed.
+     */
+    private val nationalDraw: Map<String, Double> = mapOf(
+        "DAL" to 10.0, "KC" to 9.0, "PHI" to 8.0, "GB" to 8.0, "PIT" to 8.0, "SF" to 8.0,
+        "BUF" to 7.0, "DET" to 7.0, "BAL" to 6.0, "NE" to 6.0, "CHI" to 6.0, "NYG" to 6.0,
+        "LAR" to 5.0, "LA" to 5.0, "MIN" to 5.0, "CIN" to 5.0, "DEN" to 5.0, "SEA" to 5.0,
+        "MIA" to 5.0, "LV" to 5.0, "NYJ" to 5.0, "WSH" to 5.0, "WAS" to 5.0,
+    )
+
+    /** Winning share of a record like "7-2" or "6-3-1" (ties count half), or 0.5 if unknown. */
+    internal fun winShare(record: String?): Double {
+        val parts = record?.split('-')?.mapNotNull { it.trim().toIntOrNull() } ?: return 0.5
+        if (parts.size < 2) return 0.5
+        val wins = parts[0] + (parts.getOrElse(2) { 0 } / 2.0)
+        val played = parts.sum()
+        return if (played == 0) 0.5 else wins / played
+    }
+
+    /** How big a draw [game] is nationally: both teams' following, plus up to 4 for their records. */
+    internal fun appeal(game: Game): Double = listOf(game.home.team, game.away.team).sumOf { team ->
+        (nationalDraw[team.abbreviation.uppercase()] ?: 4.0) + 4 * winShare(team.record)
+    }
+
+    /** The window's featured game: the biggest draw, earliest first on a tie. */
+    internal fun featured(games: List<Game>): Game =
+        games.sortedBy { it.startTime }.maxBy(::appeal)
+
+    private fun teams(game: Game) = listOf(game.home.team.abbreviation, game.away.team.abbreviation)
+
+    private fun closest(market: TvMarket, game: Game): Double =
+        teams(game).mapNotNull { NflHomes.milesTo(market, it) }.minOrNull() ?: Double.MAX_VALUE
+
+    /**
+     * The game that's [market]'s own among [games]: its team's, its fan region's, or a nearby
+     * division rival's when its own team isn't playing. Null when none is.
+     */
+    internal fun localGame(market: TvMarket, games: List<Game>, playingThen: Set<String> = emptySet()): Game? {
+        val home = games.filter { g -> teams(g).any { NflHomes.isHome(market, it) } }
+        if (home.isNotEmpty()) return home.minBy { closest(market, it) }
+        val regional = games.filter { g -> teams(g).any { NflRegions.isRegional(market, it) } }
+        if (regional.isNotEmpty()) return regional.minBy { closest(market, it) }
+        val own = NflHomes.homeTeams(market)
+        if (own.any { it in playingThen }) return null
+        return games
+            .filter { g ->
+                teams(g).any { t ->
+                    own.any { NflRegions.rivals(it, t) } && (NflHomes.milesTo(market, t) ?: Double.MAX_VALUE) <= RIVAL_MILES
+                }
+            }
+            .minByOrNull { closest(market, it) }
+    }
+
+    /**
+     * How much a bigger draw outweighs distance when a market has no game of its own: each
+     * game reaches out in proportion to its appeal raised to this power. 0 would give every
+     * market the closest game, a very large number the featured game everywhere.
+     */
+    private const val PULL = 3.0
+
+    /** The game a market with no game of its own gets: the best mix of near and big. */
+    internal fun reach(market: TvMarket, games: List<Game>): Game =
+        games.sortedBy { it.startTime }.minBy { closest(market, it) / Math.pow(appeal(it), PULL) }
+
+    /** The game [market] gets among several on one network at once: its own game, else the best reach. */
+    internal fun pick(
+        market: TvMarket,
+        games: List<Game>,
+        playingThen: Set<String> = emptySet(),
+    ): Game = localGame(market, games, playingThen) ?: reach(market, games)
+
+    /**
+     * The game [market] gets from the network with one game per market on Sunday afternoon:
+     * its own game early or late; a late game when its own team is busy early on the other
+     * network ([busyEarly]); else an early game.
+     */
+    internal fun pickSingleGame(market: TvMarket, games: List<Game>, busyEarly: Set<String>, playingThen: Set<String>): Game {
+        localGame(market, games, playingThen)?.let { return it }
+        val (early, late) = games.partition { it.easternMinutes() < 15 * 60 }
+        return when {
+            NflHomes.homeTeams(market).any { it in busyEarly } && late.isNotEmpty() -> reach(market, late)
+            early.isNotEmpty() -> reach(market, early)
+            else -> reach(market, late)
         }
-        return (home.ifEmpty { games }).minBy(::closest)
     }
 
     /**
