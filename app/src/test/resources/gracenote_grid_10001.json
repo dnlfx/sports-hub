@@ -1,0 +1,319 @@
+{
+ "channels": [
+  {
+   "callSign": "WCBSDT",
+   "affiliateName": "CBS TELEVISION NETWORK",
+   "affiliateCallSign": "null",
+   "channelId": "16689",
+   "channelNo": "2.1",
+   "events": [
+    {
+     "callSign": "WCBSDT",
+     "duration": "180",
+     "startTime": "2026-11-15T18:00:00Z",
+     "endTime": "2026-11-15T21:00:00Z",
+     "thumbnail": "GNLZZGG0039QQM5",
+     "channelNo": "2.1",
+     "filter": [
+      "filter-sports"
+     ],
+     "seriesId": "SH00003128",
+     "rating": null,
+     "flag": [
+      "Live",
+      "New"
+     ],
+     "tags": [
+      "Stereo",
+      "CC"
+     ],
+     "program": {
+      "title": "NFL Football",
+      "id": "EP000031285816",
+      "tmsId": "EP000031285816",
+      "shortDesc": "The New York Jets host Buffalo Bills at MetLife Stadium. New York relies on 20 sacks and a plus-two turnover differential to snap a skid, while Buffalo counts on a 33.3 scoring average and five straight series wins to take an away divisional win.",
+      "season": null,
+      "releaseYear": null,
+      "episode": null,
+      "episodeTitle": "Buffalo Bills at New York Jets",
+      "seriesId": "SH00003128",
+      "isGeneric": "0"
+     }
+    }
+   ],
+   "id": "166890",
+   "stationGenres": [
+    false
+   ],
+   "stationFilters": [
+    "filter-sports"
+   ],
+   "thumbnail": "//zpmc.tmsimg.com/h3/NowShowing/16689/s28711_ll_h15_ab.png?w=55"
+  },
+  {
+   "callSign": "WNBCDT",
+   "affiliateName": "NATIONAL BROADCASTING COMPANY",
+   "affiliateCallSign": "null",
+   "channelId": "20459",
+   "channelNo": "4.1",
+   "events": [
+    {
+     "callSign": "WNBCDT",
+     "duration": "120",
+     "startTime": "2026-11-15T17:00:00Z",
+     "endTime": "2026-11-15T19:00:00Z",
+     "thumbnail": "GNLZZGG003NKY98",
+     "channelNo": "4.1",
+     "filter": [
+      "filter-sports"
+     ],
+     "seriesId": "SH05279165",
+     "rating": null,
+     "flag": [
+      "Live",
+      "New"
+     ],
+     "tags": [
+      "CC"
+     ],
+     "program": {
+      "title": "ISU Grand Prix of Figure Skating",
+      "id": "EP052791650217",
+      "tmsId": "EP052791650217",
+      "shortDesc": "Highlights from the top performances so far at the ISU Skate America event in Everett, Wash.",
+      "season": null,
+      "releaseYear": null,
+      "episode": null,
+      "episodeTitle": "Skate America, Part 1",
+      "seriesId": "SH05279165",
+      "isGeneric": "0"
+     }
+    },
+    {
+     "callSign": "WNBCDT",
+     "duration": "240",
+     "startTime": "2026-11-15T19:00:00Z",
+     "endTime": "2026-11-15T23:00:00Z",
+     "thumbnail": "GNLZZGG003NKY8G",
+     "channelNo": "4.1",
+     "filter": [
+      "filter-sports"
+     ],
+     "seriesId": "SH05279165",
+     "rating": null,
+     "flag": [
+      "Live",
+      "New"
+     ],
+     "tags": [
+      "CC"
+     ],
+     "program": {
+      "title": "ISU Grand Prix of Figure Skating",
+      "id": "EP052791650218",
+      "tmsId": "EP052791650218",
+      "shortDesc": "Free dance and women's free skate performances from the ISU Grand Prix of Figure Skating - Skate America event. From Everett, Wash.",
+      "season": null,
+      "releaseYear": null,
+      "episode": null,
+      "episodeTitle": "Skate America, Part 2",
+      "seriesId": "SH05279165",
+      "isGeneric": "0"
+     }
+    }
+   ],
+   "id": "204595",
+   "stationGenres": [
+    false
+   ],
+   "stationFilters": [
+    "filter-sports"
+   ],
+   "thumbnail": "//zpmc.tmsimg.com/h3/NowShowing/20459/s28717_ll_h15_ad.png?w=55"
+  },
+  {
+   "callSign": "WNYWDT",
+   "affiliateName": "FOX ENTERTAINMENT",
+   "affiliateCallSign": "null",
+   "channelId": "20360",
+   "channelNo": "5.1",
+   "events": [
+    {
+     "callSign": "WNYWDT",
+     "duration": "205",
+     "startTime": "2026-11-15T18:00:00Z",
+     "endTime": "2026-11-15T21:25:00Z",
+     "thumbnail": "GNLZZGG0039LZZP",
+     "channelNo": "5.1",
+     "filter": [
+      "filter-sports"
+     ],
+     "seriesId": "SH00003128",
+     "rating": null,
+     "flag": [
+      "Live",
+      "New"
+     ],
+     "tags": [
+      "Stereo",
+      "CC"
+     ],
+     "program": {
+      "title": "NFL Football",
+      "id": "EP000031285822",
+      "tmsId": "EP000031285822",
+      "shortDesc": "The Green Bay Packers host the Minnesota Vikings in an NFC North rivalry game at Lambeau Field. Minnesota has won four of the last five meetings, including a 39-22 win at U.S. Bank Stadium earlier this season, and Green Bay looks to even the series.",
+      "season": null,
+      "releaseYear": null,
+      "episode": null,
+      "episodeTitle": "Minnesota Vikings at Green Bay Packers",
+      "seriesId": "SH00003128",
+      "isGeneric": "0"
+     }
+    }
+   ],
+   "id": "2036011",
+   "stationGenres": [
+    false
+   ],
+   "stationFilters": [
+    "filter-sports"
+   ],
+   "thumbnail": "//zpmc.tmsimg.com/h3/NowShowing/20360/s28719_ll_h15_ac.png?w=55"
+  },
+  {
+   "callSign": "WABCDT",
+   "affiliateName": "AMERICAN BROADCASTING COMPANY",
+   "affiliateCallSign": "null",
+   "channelId": "20453",
+   "channelNo": "7.1",
+   "events": [
+    {
+     "callSign": "WABCDT",
+     "duration": "120",
+     "startTime": "2026-11-15T18:00:00Z",
+     "endTime": "2026-11-15T20:00:00Z",
+     "thumbnail": "GNLZZGG003S2HY1",
+     "channelNo": "7.1",
+     "filter": [
+      "filter-sports"
+     ],
+     "seriesId": "SH06646038",
+     "rating": null,
+     "flag": [
+      "Live",
+      "New"
+     ],
+     "tags": [
+      "Stereo",
+      "CC"
+     ],
+     "program": {
+      "title": "Women's College Basketball",
+      "id": "EP066460380739",
+      "tmsId": "EP066460380739",
+      "shortDesc": "The No. 1 South Carolina Gamecocks face the No. 3 USC Trojans at Bon Secours Wellness Arena in Greenville. USC enters with a three-game win streak and aims for a fourth win, while South Carolina relies on Joyce Edwards to secure a win.",
+      "season": null,
+      "releaseYear": null,
+      "episode": null,
+      "episodeTitle": "USC vs. South Carolina",
+      "seriesId": "SH06646038",
+      "isGeneric": "0"
+     }
+    },
+    {
+     "callSign": "WABCDT",
+     "duration": "150",
+     "startTime": "2026-11-15T20:00:00Z",
+     "endTime": "2026-11-15T22:30:00Z",
+     "thumbnail": "p11962008_b_v9_ac",
+     "channelNo": "7.1",
+     "filter": [
+      "filter-sports"
+     ],
+     "seriesId": "SH02230498",
+     "rating": null,
+     "flag": [
+      "Live",
+      "New"
+     ],
+     "tags": [
+      "Stereo",
+      "CC"
+     ],
+     "program": {
+      "title": "NWSL Soccer",
+      "id": "EP022304981491",
+      "tmsId": "EP022304981491",
+      "shortDesc": "Gotham FC host Kansas City Current in the NWSL Championship semifinal at Icahn Stadium. Two of the league's top teams meet in a single-leg tie, with Gotham on three straight wins and Kansas City edging Angel City in extra time to get here.",
+      "season": null,
+      "releaseYear": null,
+      "episode": null,
+      "episodeTitle": "Kansas City Current at Gotham FC",
+      "seriesId": "SH02230498",
+      "isGeneric": "0"
+     }
+    }
+   ],
+   "id": "2045316",
+   "stationGenres": [
+    false
+   ],
+   "stationFilters": [
+    "filter-sports"
+   ],
+   "thumbnail": "//zpmc.tmsimg.com/h3/NowShowing/20453/s28708_ll_h15_ac.png?w=55"
+  },
+  {
+   "callSign": "WRGBDK3",
+   "affiliateName": "CBS TELEVISION NETWORK",
+   "affiliateCallSign": "null",
+   "channelId": "99362",
+   "channelNo": "45.3",
+   "events": [
+    {
+     "callSign": "WRGBDK3",
+     "duration": "180",
+     "startTime": "2026-11-15T18:00:00Z",
+     "endTime": "2026-11-15T21:00:00Z",
+     "thumbnail": "GNLZZGG0039QQM5",
+     "channelNo": "45.3",
+     "filter": [
+      "filter-sports"
+     ],
+     "seriesId": "SH00003128",
+     "rating": null,
+     "flag": [
+      "Live",
+      "New"
+     ],
+     "tags": [
+      "Stereo",
+      "CC"
+     ],
+     "program": {
+      "title": "NFL Football",
+      "id": "EP000031285816",
+      "tmsId": "EP000031285816",
+      "shortDesc": "The New York Jets host Buffalo Bills at MetLife Stadium. New York relies on 20 sacks and a plus-two turnover differential to snap a skid, while Buffalo counts on a 33.3 scoring average and five straight series wins to take an away divisional win.",
+      "season": null,
+      "releaseYear": null,
+      "episode": null,
+      "episodeTitle": "Buffalo Bills at New York Jets",
+      "seriesId": "SH00003128",
+      "isGeneric": "0"
+     }
+    }
+   ],
+   "id": "99362121",
+   "stationGenres": [
+    false
+   ],
+   "stationFilters": [
+    "filter-sports"
+   ],
+   "thumbnail": "//zpmc.tmsimg.com/h3/NowShowing/99362/s28711_ll_h15_ab.png?w=55"
+  }
+ ],
+ "headendname": "-"
+}

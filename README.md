@@ -12,6 +12,8 @@ An Android sports app: live scores and stats, team pages, player profiles, plus 
 - **College football**: the top of the sport only: the SEC, Big Ten, Big 12 and ACC, plus Notre Dame. A game shows when at least one side is one of those teams, so Ohio State against a smaller school is listed but two smaller schools aren't. Ranked teams carry their poll rank on score cards and game pages. Bowls and the playoff follow week 15 (conference championships). Teams are grouped by conference.
 - **Teams**: the standings, a card per division (per conference in college football) with each team's rank, record, games behind and streak, the leader marked. College conferences rank by conference record. Your teams lead the page with their place in their division, and pills narrow it to one conference (AFC or NFC, East or West). A team page has its schedule (tap any game, past or future), player season stats added up from each game's box score (per-game averages and totals in the NBA), team season stats, the roster and the depth chart.
 - **Players**: tap a player anywhere for their bio (height, weight, age, college, draft) right under their name and photo, this season's numbers and career stats by year. Only the stat categories that fit their position show, unless they really play both ways.
+- **TV coverage (NFL)**: a map for each network and window of the week (CBS early, FOX single game, Sunday night and so on), colored by the game each part of the country gets, with each game's share of TV homes and the user's own market ringed. Tap the map to see what any market gets; arrows step through the weeks. It opens from the card at the top of the NFL scores. The coverage is projected the way the networks split the country: a team's home markets (within 75 miles of its stadium, plus Milwaukee for Green Bay) always get its game, and so does its fan region (`data/tv/NflRegions.kt`); a market whose team isn't playing gets a division rival's game from nearby; everywhere else gets the best mix of a near game and a big draw (the teams' national following and records), so the featured game reaches farthest. A lone game on its network goes everywhere, and cable or streaming games (ESPN, Prime Video, NFL Network, Netflix) are free over the air only in the teams' home markets. The network with the Sunday doubleheader is the one with 4:25 PM kickoffs; the other network's early and late games share one "single game" map, where a market whose team plays early on the other network gets a late game. Checked against the real antenna listings of about 60 cities: 91% of market maps right in the week the rules were tuned on, 73% in a week they weren't (`CoverageAccuracyTest`). A link opens that week's maps at 506 Sports.
+- **On free TV near you**: games the user gets with an antenna show their network with an antenna icon on score cards. Set the TV market from the coverage page, from the phone's approximate location (asked for only then, and used once) or by searching about 200 markets. With a ZIP code (typed in the market picker, or found with the location), NFL cards show the real local channel ("CBS 2.1") from the free TV guide at tvlistings.gracenote.com: its antenna lineup for that ZIP, one request per six hours of kickoffs, kept for half an hour. The guide only answers web browsers, so the app asks the way its web page does; when it refuses, or for games it doesn't list yet, the estimate above is used. Without a market, only national broadcast games are marked. Other sports mark broadcast games that are alone on their network at the time.
 - **Compare**: two teams or two players side by side, stat by stat, with the better number in each row in that side's color and a tally of who's ahead. Open it from a team or player page, or the Teams tab. Team stats compare per game where ESPN gives it; players compare their latest season or whole career.
 
 ## Stack
@@ -26,6 +28,7 @@ An Android sports app: live scores and stats, team pages, player profiles, plus 
 app/src/main/java/com/sportshub/app/
   model/      Sport, Game, Team, StreamSource (sport-agnostic)
   data/       ScoresRepository (swappable data provider), TeamRepository, FavoritesRepository (followed teams), SourcesRepository (saved URLs), page scanner
+  data/tv/    TV markets, NFL home markets, coverage windows, the map outline and the user's market
   ui/         Scores, Teams, Watch and Sources tabs, game detail (with the win probability chart), team, player, compare, favorites, shared components, theme
 ```
 
@@ -55,7 +58,9 @@ Adding a sport means flipping `isAvailable` in `Sport.kt` and teaching the score
 
 ## Platform
 
-Targets Android 17 (API 37), minimum Android 8.0 (API 26). On Android 17 the app asks for local network access only if a saved source is on the home network (a private IP or a `.local` name).
+Targets Android 17 (API 37), minimum Android 8.0 (API 26). On Android 17 the app asks for local network access only if a saved source is on the home network (a private IP or a `.local` name). Approximate location is asked for only when the user taps "Use my location" to find their TV market.
+
+The coverage map's outline (`app/src/main/assets/us_map.txt`) is built from the U.S. Census Bureau's state boundaries, via the us-atlas package, by `tools/make_us_map.py`.
 
 ## Sources
 
@@ -63,7 +68,9 @@ The app ships with no video sources. On the Sources tab you paste a page URL, an
 
 ## Building
 
-Open in Android Studio, or run `./gradlew assembleDebug`. Pull requests build a debug APK in GitHub Actions. Every merge to `main` publishes a single release, named like **Sports Hub 1.0.12 (latest)**, with the installable APK attached; older releases are removed.
+Open in Android Studio, or run `./gradlew assembleDebug`. Pull requests build a debug APK in GitHub Actions.
+
+Screenshots of the real app, with live scores and listings, render on the JVM with Robolectric (no emulator): `./gradlew testDebugUnitTest -Pscreenshots --tests '*AppScreenshots*'` writes PNGs of the NFL scores and coverage pages to `app/build/screenshots`. They're skipped in normal test runs. Every merge to `main` publishes a single release, named like **Sports Hub 1.0.12 (latest)**, with the installable APK attached; older releases are removed.
 
 ## Release signing
 

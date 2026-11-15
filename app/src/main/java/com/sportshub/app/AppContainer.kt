@@ -10,6 +10,8 @@ import com.sportshub.app.data.ScoresRepository
 import com.sportshub.app.data.SourcesRepository
 import com.sportshub.app.data.TeamRepository
 import com.sportshub.app.data.espn.EspnClient
+import com.sportshub.app.data.tv.LocalListingsRepository
+import com.sportshub.app.data.tv.TvMarketRepository
 import com.sportshub.app.data.scan.PageScanner
 import com.sportshub.app.ui.components.NetworkOnlyCrossfade
 import com.sportshub.app.model.Game
@@ -46,6 +48,8 @@ class AppContainer(context: Context) {
     val teamRepository = TeamRepository(appContext, espn)
     val sourcesRepository = SourcesRepository(appContext)
     val favorites = FavoritesRepository(appContext)
+    val tvMarkets = TvMarketRepository(appContext)
+    val localListings = LocalListingsRepository(http)
     val pageScanner = PageScanner(http)
 
     /**
