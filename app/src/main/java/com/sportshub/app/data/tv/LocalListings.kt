@@ -7,6 +7,11 @@ import com.sportshub.app.data.espn.int
 import com.sportshub.app.data.espn.obj
 import com.sportshub.app.data.espn.str
 import com.sportshub.app.model.Game
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -157,16 +162,76 @@ object LocalListings {
     }
 
     /**
+     * Games among [games] the guide hasn't decided yet: one of the user's stations on the
+     * game's network has football on at kickoff but doesn't say which game, as happens
+     * before the networks set the week's coverage. These keep the estimate.
+     */
+    fun undecided(games: List<Game>, channels: List<ListingChannel>, matched: Set<String>): Set<String> =
+        games.filter { game ->
+            if (game.id in matched) return@filter false
+            val network = Networks.overTheAir(game.broadcasts) ?: return@filter false
+            channels.any { channel ->
+                channel.affiliate.equals(network, ignoreCase = true) && channel.events.any { event ->
+                    isFootball(event) && onAtKickoff(event, game.startTime) && games.none { other ->
+                        val text = listOfNotNull(event.title, event.episodeTitle, event.description).joinToString(" ")
+                        mentions(text, other.away.team.name) || mentions(text, other.home.team.name)
+                    }
+                }
+            }
+        }.mapTo(HashSet()) { it.id }
+
+    /**
+     * The lineup for [games] from [channels] that cover the time ranges [covered]: games
+     * kicking off in a covered range count as checked, except the [undecided] ones.
+     */
+    fun lineup(zip: String, games: List<Game>, channels: List<ListingChannel>, covered: (Instant) -> Boolean): LocalLineup {
+        val inRange = games.filter { covered(it.startTime) }
+        val airings = match(inRange, channels)
+        val open = undecided(inRange, channels, airings.keys)
+        return LocalLineup(zip, airings, inRange.mapTo(HashSet()) { it.id } - open)
+    }
+
+    /**
+     * [channels] trimmed to their football broadcasts, written back in the guide's own
+     * format so [parse] reads it: what the app keeps on the phone in case the guide
+     * refuses later.
+     */
+    fun footballOnly(channels: List<ListingChannel>): String = buildJsonObject {
+        putJsonArray("channels") {
+            for (channel in channels) {
+                val football = channel.events.filter(::isFootball)
+                addJsonObject {
+                    put("callSign", channel.callSign)
+                    put("channelNo", channel.number)
+                    channel.affiliate?.let { put("affiliateName", it) }
+                    putJsonArray("events") {
+                        for (event in football) addJsonObject {
+                            put("startTime", event.start.toString())
+                            put("endTime", event.end.toString())
+                            putJsonObject("program") {
+                                put("title", event.title)
+                                event.episodeTitle?.let { put("episodeTitle", it) }
+                                event.description?.let { put("shortDesc", it) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }.toString()
+
+    /**
      * The games the user gets for free: the guide's answer for the games it checked, and
      * the [estimate] for the rest.
      */
     fun overTheAir(estimate: Set<String>, lineup: LocalLineup?): Set<String> =
         if (lineup == null) estimate else estimate.filterTo(HashSet()) { it !in lineup.checked } + lineup.airings.keys
 
-    private fun isFootball(event: ListingEvent): Boolean {
-        val title = event.title.uppercase()
-        return "NFL" in title || "FOOTBALL" in title
-    }
+    /** "NFL" as a word (not inside "DragonFly"), or "Football". */
+    internal fun isFootball(event: ListingEvent): Boolean =
+        nflWord.containsMatchIn(event.title) || "FOOTBALL" in event.title.uppercase()
+
+    private val nflWord = Regex("\\bNFL\\b", RegexOption.IGNORE_CASE)
 
     /** On the air at kickoff, and starting no more than an hour before it (not a pregame show running long). */
     private fun onAtKickoff(event: ListingEvent, kickoff: Instant): Boolean =

@@ -59,6 +59,10 @@ android {
                 // PNGs land in app/build/screenshots.
                 if (project.hasProperty("screenshots")) {
                     test.systemProperty("screenshots.dir", layout.buildDirectory.dir("screenshots").get().asFile.absolutePath)
+                    // -Pscreenshots.market=new-york -Pscreenshots.zip=10001 -Pscreenshots.tz=America/New_York
+                    listOf("market", "zip", "tz").forEach { key ->
+                        project.findProperty("screenshots.$key")?.let { test.systemProperty("screenshots.$key", it) }
+                    }
                 } else {
                     test.exclude("**/screenshots/**")
                 }

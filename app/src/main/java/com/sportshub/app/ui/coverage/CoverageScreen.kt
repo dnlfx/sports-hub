@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sportshub.app.data.tv.CoverageWindow
+import com.sportshub.app.data.tv.LocalListingsRepository
 import com.sportshub.app.data.tv.TvMarket
 import com.sportshub.app.data.tv.TvMarketRepository
 import com.sportshub.app.model.Game
@@ -281,7 +282,11 @@ private fun MarketCard(market: TvMarket?, zip: String?, onChange: () -> Unit, mo
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                if (zip != null) "ZIP $zip: exact channels on Scores" else "Add your ZIP for exact channels",
+                when {
+                    zip != null -> "ZIP $zip: exact channels on Scores"
+                    market != null && market.id in LocalListingsRepository.SAMPLE_ZIPS -> "Exact channels on Scores"
+                    else -> "Add your ZIP for exact channels"
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -387,7 +392,7 @@ private fun About(onOfficialMaps: () -> Unit) {
             "Projected from each game's network and kickoff. A team's home markets always get its game, " +
                 "and its fan region usually does too; elsewhere it's a mix of the nearest game and the biggest " +
                 "draw. Games on cable or streaming are shown on a local station in the teams' home markets. " +
-                "Right for about 3 in 4 markets; with your ZIP set, Scores shows your real channels from the TV guide.",
+                "Right for about 3 in 4 markets; with your ZIP set (or in Dallas-Fort Worth), Scores shows your real channels from the TV guide.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

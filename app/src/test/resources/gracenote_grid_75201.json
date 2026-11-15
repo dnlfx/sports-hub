@@ -1,0 +1,219 @@
+{
+ "channels": [
+  {
+   "callSign": "KDFWDT",
+   "channelNo": "4.1",
+   "affiliateName": "FOX ENTERTAINMENT",
+   "events": [
+    {
+     "startTime": "2026-11-15T18:00:00Z",
+     "endTime": "2026-11-15T21:25:00Z",
+     "duration": "205",
+     "program": {
+      "title": "NFL Football",
+      "episodeTitle": "Minnesota Vikings at Green Bay Packers",
+      "shortDesc": "The Green Bay Packers host the Minnesota Vikings in an NFC North rivalry game at Lambeau Field. Minnesota has won four of the last five meetings, including a 39-22 win at U.S. Bank Stadium earlier this season, and Green Bay looks to even the series."
+     }
+    },
+    {
+     "startTime": "2026-11-15T21:25:00Z",
+     "endTime": "2026-11-16T00:30:00Z",
+     "duration": "185",
+     "program": {
+      "title": "NFL Football",
+      "episodeTitle": "San Francisco 49ers at Dallas Cowboys",
+      "shortDesc": "The Dallas Cowboys host the San Francisco 49ers in NFL regular-season play at AT&T Stadium. San Francisco is tied with Buffalo for the league's best record at 7-1, while Dallas would love to even its record at 5-5 with an upset victory."
+     }
+    }
+   ]
+  },
+  {
+   "callSign": "KXASDT",
+   "channelNo": "5.1",
+   "affiliateName": "NATIONAL BROADCASTING COMPANY",
+   "events": [
+    {
+     "startTime": "2026-11-15T17:00:00Z",
+     "endTime": "2026-11-15T19:00:00Z",
+     "duration": "120",
+     "program": {
+      "title": "ISU Grand Prix of Figure Skating",
+      "episodeTitle": "Skate America, Part 1",
+      "shortDesc": "Highlights from the top performances so far at the ISU Skate America event in Everett, Wash."
+     }
+    },
+    {
+     "startTime": "2026-11-15T19:00:00Z",
+     "endTime": "2026-11-15T23:00:00Z",
+     "duration": "240",
+     "program": {
+      "title": "ISU Grand Prix of Figure Skating",
+      "episodeTitle": "Skate America, Part 2",
+      "shortDesc": "Free dance and women's free skate performances from the ISU Grand Prix of Figure Skating - Skate America event. From Everett, Wash."
+     }
+    },
+    {
+     "startTime": "2026-11-15T23:00:00Z",
+     "endTime": "2026-11-15T23:30:00Z",
+     "duration": "30",
+     "program": {
+      "title": "NBC5 Weekend Report",
+      "episodeTitle": null,
+      "shortDesc": "Stay informed with the latest breaking news and headlines."
+     }
+    },
+    {
+     "startTime": "2026-11-15T23:30:00Z",
+     "endTime": "2026-11-16T00:00:00Z",
+     "duration": "30",
+     "program": {
+      "title": "NBC Nightly News With Tom Llamas",
+      "episodeTitle": null,
+      "shortDesc": "Tom Llamas anchors the latest news, going beyond the headlines to see how lives are affected by the world around them."
+     }
+    }
+   ]
+  },
+  {
+   "callSign": "WFAADT",
+   "channelNo": "8.1",
+   "affiliateName": "AMERICAN BROADCASTING COMPANY",
+   "events": [
+    {
+     "startTime": "2026-11-15T18:00:00Z",
+     "endTime": "2026-11-15T20:00:00Z",
+     "duration": "120",
+     "program": {
+      "title": "Women's College Basketball",
+      "episodeTitle": "USC vs. South Carolina",
+      "shortDesc": "The No. 1 South Carolina Gamecocks face the No. 3 USC Trojans at Bon Secours Wellness Arena in Greenville. USC enters with a three-game win streak and aims for a fourth win, while South Carolina relies on Joyce Edwards to secure a win."
+     }
+    },
+    {
+     "startTime": "2026-11-15T20:00:00Z",
+     "endTime": "2026-11-15T22:30:00Z",
+     "duration": "150",
+     "program": {
+      "title": "NWSL Soccer",
+      "episodeTitle": "Kansas City Current at Gotham FC",
+      "shortDesc": "Gotham FC host Kansas City Current in the NWSL Championship semifinal at Icahn Stadium. Two of the league's top teams meet in a single-leg tie, with Gotham on three straight wins and Kansas City edging Angel City in extra time to get here."
+     }
+    },
+    {
+     "startTime": "2026-11-15T22:30:00Z",
+     "endTime": "2026-11-15T23:00:00Z",
+     "duration": "30",
+     "program": {
+      "title": "Looking for a Medicare plan? Tune in now!",
+      "episodeTitle": null,
+      "shortDesc": "The Medicare annual election period ends on December 7th. Watch and learn about Humana Medicare Advantage plans."
+     }
+    },
+    {
+     "startTime": "2026-11-15T23:00:00Z",
+     "endTime": "2026-11-15T23:30:00Z",
+     "duration": "30",
+     "program": {
+      "title": "ABC World News Tonight With David Muir",
+      "episodeTitle": null,
+      "shortDesc": "Delivering the news that matters most."
+     }
+    },
+    {
+     "startTime": "2026-11-15T23:30:00Z",
+     "endTime": "2026-11-16T00:00:00Z",
+     "duration": "30",
+     "program": {
+      "title": "News 8 at 5:30pm",
+      "episodeTitle": null,
+      "shortDesc": "Stay informed with the latest breaking news and headlines."
+     }
+    }
+   ]
+  },
+  {
+   "callSign": "KTVTDT",
+   "channelNo": "11.1",
+   "affiliateName": "CBS TELEVISION NETWORK",
+   "events": [
+    {
+     "startTime": "2026-11-15T18:00:00Z",
+     "endTime": "2026-11-15T21:00:00Z",
+     "duration": "180",
+     "program": {
+      "title": "NFL Football",
+      "episodeTitle": "Kansas City Chiefs at Atlanta Falcons",
+      "shortDesc": "The Atlanta Falcons host the Kansas City Chiefs in NFL regular-season play at Mercedes-Benz Stadium. Atlanta enters at 3-6 after four losses in its last five games, while Kansas City arrives at 6-2 following a 35-12 victory over the New York Jets."
+     }
+    },
+    {
+     "startTime": "2026-11-15T21:00:00Z",
+     "endTime": "2026-11-15T22:00:00Z",
+     "duration": "60",
+     "program": {
+      "title": "To Be Announced",
+      "episodeTitle": null,
+      "shortDesc": "Programming to be announced."
+     }
+    },
+    {
+     "startTime": "2026-11-15T22:00:00Z",
+     "endTime": "2026-11-15T23:00:00Z",
+     "duration": "60",
+     "program": {
+      "title": "To Be Announced",
+      "episodeTitle": null,
+      "shortDesc": "Programming to be announced."
+     }
+    },
+    {
+     "startTime": "2026-11-15T23:00:00Z",
+     "endTime": "2026-11-15T23:30:00Z",
+     "duration": "30",
+     "program": {
+      "title": "CBS Evening News",
+      "episodeTitle": null,
+      "shortDesc": "Tony Dokoupil shares the day's most important stories, delivering context and depth to bring greater understanding to one's world."
+     }
+    },
+    {
+     "startTime": "2026-11-15T23:30:00Z",
+     "endTime": "2026-11-16T00:00:00Z",
+     "duration": "30",
+     "program": {
+      "title": "CBS News Texas",
+      "episodeTitle": null,
+      "shortDesc": "Stay informed with the latest breaking news and headlines."
+     }
+    }
+   ]
+  },
+  {
+   "callSign": "KDFIDT4",
+   "channelNo": "27.4",
+   "affiliateName": "FOX ENTERTAINMENT",
+   "events": [
+    {
+     "startTime": "2026-11-15T18:00:00Z",
+     "endTime": "2026-11-15T21:25:00Z",
+     "duration": "205",
+     "program": {
+      "title": "NFL Football",
+      "episodeTitle": "Minnesota Vikings at Green Bay Packers",
+      "shortDesc": "The Green Bay Packers host the Minnesota Vikings in an NFC North rivalry game at Lambeau Field. Minnesota has won four of the last five meetings, including a 39-22 win at U.S. Bank Stadium earlier this season, and Green Bay looks to even the series."
+     }
+    },
+    {
+     "startTime": "2026-11-15T21:25:00Z",
+     "endTime": "2026-11-16T00:30:00Z",
+     "duration": "185",
+     "program": {
+      "title": "NFL Football",
+      "episodeTitle": "San Francisco 49ers at Dallas Cowboys",
+      "shortDesc": "The Dallas Cowboys host the San Francisco 49ers in NFL regular-season play at AT&T Stadium. San Francisco is tied with Buffalo for the league's best record at 7-1, while Dallas would love to even its record at 5-5 with an upset victory."
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -117,14 +117,14 @@ fun ScoresScreen(
     }
 
     val board = state.board
-    // The user's real antenna lineup from the TV guide, when their ZIP is set (NFL only).
-    // Looked up again when the slate changes, not on every score update.
+    // The user's real antenna lineup from the TV guide (NFL only), by their ZIP or their
+    // market's. Looked up again when the slate changes, not on every score update.
     var lineup by remember { mutableStateOf<LocalLineup?>(null) }
     val slateIds = board?.takeIf { it.sport == Sport.NFL }?.games?.map { it.id }
-    LaunchedEffect(tvZip, slateIds) {
+    LaunchedEffect(tvZip, tvMarket, slateIds) {
         val games = board?.games
-        lineup = if (tvZip != null && localListings != null && slateIds != null && games != null) {
-            localListings.lineup(tvZip, games)
+        lineup = if (localListings != null && slateIds != null && games != null) {
+            localListings.lineup(tvZip, tvMarket, games)
         } else {
             null
         }
