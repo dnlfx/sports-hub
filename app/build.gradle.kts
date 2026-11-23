@@ -60,7 +60,7 @@ android {
                 if (project.hasProperty("screenshots")) {
                     test.systemProperty("screenshots.dir", layout.buildDirectory.dir("screenshots").get().asFile.absolutePath)
                     // -Pscreenshots.market=new-york -Pscreenshots.zip=10001 -Pscreenshots.tz=America/New_York
-                    listOf("market", "zip", "tz").forEach { key ->
+                    listOf("market", "zip", "tz", "game", "other", "fontScale", "night", "prefix").forEach { key ->
                         project.findProperty("screenshots.$key")?.let { test.systemProperty("screenshots.$key", it) }
                     }
                 } else {
