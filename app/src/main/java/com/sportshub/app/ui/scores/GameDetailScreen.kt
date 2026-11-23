@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -95,6 +96,9 @@ import com.sportshub.app.ui.theme.SportsHubTheme
 
 private val TopBarHeight = 56.dp
 
+/** Space between the cards on a game page. */
+private val ItemSpacing = 12.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameDetailScreen(
@@ -131,6 +135,14 @@ fun GameDetailScreen(
     // Which team's box score is showing. Kept across refreshes and rotation.
     var selectedTeamId by rememberSaveable { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
+    // Once the box score's own team switch scrolls under the top bar, a copy pins below the bar.
+    val density = LocalDensity.current
+    val barBottom = WindowInsets.statusBars.getTop(density) + with(density) { TopBarHeight.roundToPx() }
+    val switchInset = teamSwitchInset()
+    val pinnedHeight = pinnedTeamSwitchHeight()
+    val switchPinned by remember(listState, barBottom, switchInset, pinnedHeight) {
+        derivedStateOf { teamSwitchPinned(listState.layoutInfo, barBottom, switchInset, pinnedHeight) }
+    }
     // Past the header, the top bar fills in and names the game.
     val scrolled by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 420 } }
     LightStatusBarIcons(enabled = game != null && !scrolled)
@@ -149,7 +161,7 @@ fun GameDetailScreen(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = bottomListPadding()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(ItemSpacing),
             ) {
                 val detail = state.detail
                 // Still waiting on the first load: hold each section's place with a placeholder
@@ -194,7 +206,7 @@ fun GameDetailScreen(
                         // Once the game is on, show each team's full box score.
                         when {
                             playerStats.isNotEmpty() ->
-                                playerStatsItems(playerStats, game, selectedTeamId, { selectedTeamId = it }, onOpenPlayer)
+                                playerStatsItems(playerStats, game, selectedTeamId, { selectedTeamId = it }, onOpenPlayer, ItemSpacing)
                             leaders.isNotEmpty() -> item(key = "players") {
                                 Section("Leaders") { TeamLeadersContent(leaders, game, onOpenTeam, onOpenPlayer) }
                             }
@@ -225,11 +237,21 @@ fun GameDetailScreen(
             }
         }
 
-        DetailTopBar(
-            title = game?.let { "${it.away.team.abbreviation} @ ${it.home.team.abbreviation}" } ?: "Game",
-            solid = scrolled || game == null,
-            onBack = onBack,
-        )
+        Column {
+            DetailTopBar(
+                title = game?.let { "${it.away.team.abbreviation} @ ${it.home.team.abbreviation}" } ?: "Game",
+                solid = scrolled || game == null,
+                onBack = onBack,
+            )
+            if (game != null) {
+                PinnedTeamSwitch(
+                    visible = switchPinned,
+                    teams = listOf(game.away.team, game.home.team),
+                    selectedId = boxScoreTeam(boxScore, game, selectedTeamId).id,
+                    onSelect = { selectedTeamId = it },
+                )
+            }
+        }
     }
 }
 
